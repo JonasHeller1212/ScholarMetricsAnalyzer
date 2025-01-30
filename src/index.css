@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --gradient-start: #019DD4;
+  --gradient-end: #E84E10;
+}
+
+body {
+  @apply antialiased;
+}
+
+.gradient-text {
+  @apply bg-clip-text text-transparent;
+  background-image: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+}
+
+.gradient-bg {
+  background-image: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+}
+
+.gradient-border {
+  border-image: linear-gradient(135deg, var(--gradient-start), var(--gradient-end)) 1;
+}
+
+.gradient-icon {
+  @apply text-transparent;
+  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gradient-to-br from-[#019DD4] to-[#E84E10] rounded-full;
+}
+
+/* Smooth transitions */
+* {
+  @apply transition-colors duration-200;
+}
+
+/* Loading animation */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
