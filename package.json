@@ -1,13 +1,16 @@
 {
   "name": "scholar-metrics-extension",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "changelog": "node scripts/generate-changelog.js",
+    "predeploy": "npm run changelog && git add CHANGELOG.md",
+    "deploy": "vite build && netlify deploy --prod"
   },
   "dependencies": {
     "lucide-react": "^0.344.0",

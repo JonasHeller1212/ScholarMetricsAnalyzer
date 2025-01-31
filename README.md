@@ -7,8 +7,8 @@ A Chrome extension that enhances Google Scholar profiles with advanced metrics a
 - Advanced citation metrics (h-index, g-index, i10-index)
 - Publication analysis
 - Self-citation tracking
-- Co-author analysis
-- Visual citation display (5, 10, all years) with prediction of the current year
+- Co-author network analysis
+- Visual metrics display
 - Detailed tooltips with metric explanations
 
 ## Installation

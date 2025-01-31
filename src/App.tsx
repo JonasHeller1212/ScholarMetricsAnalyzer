@@ -1,12 +1,17 @@
 import React, { useState } from 'react';
-import { GraduationCap } from 'lucide-react';
+import { GraduationCap, Linkedin, Github } from 'lucide-react';
 import { SearchBar } from './components/SearchBar';
 import { LandingPage } from './components/LandingPage';
-import { ProfileView } from './components/ProfileView';
+import ProfileView from './components/ProfileView';
 import { PrivacyModal } from './components/PrivacyModal';
 import { TermsModal } from './components/TermsModal';
 import { fetchScholarProfile } from './utils/scholarApi';
 import type { Author } from './types/scholar';
+
+const SOCIAL_LINKS = {
+  linkedin: 'https://www.linkedin.com/in/hellerjonas/',
+  github: 'https://github.com/JonasHeller1212'
+};
 
 function App() {
   const [loading, setLoading] = useState(false);
@@ -37,6 +42,29 @@ function App() {
     setError(null);
   };
 
+  const SocialLinks = () => (
+    <div className="flex items-center space-x-4">
+      <a
+        href={SOCIAL_LINKS.linkedin}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-gray-600 hover:text-blue-600 transition-colors"
+        title="LinkedIn Profile"
+      >
+        <Linkedin className="h-5 w-5" />
+      </a>
+      <a
+        href={SOCIAL_LINKS.github}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-gray-600 hover:text-gray-900 transition-colors"
+        title="GitHub Profile"
+      >
+        <Github className="h-5 w-5" />
+      </a>
+    </div>
+  );
+
   if (data) {
     return (
       <ProfileView
@@ -45,6 +73,7 @@ function App() {
         error={error}
         onSearch={handleSearch}
         onReset={handleReset}
+        socialLinks={<SocialLinks />}
       />
     );
   }
@@ -63,9 +92,12 @@ function App() {
                 <p className="text-sm text-gray-600">Advanced academic analytics</p>
               </div>
             </div>
-            <nav className="hidden md:flex items-center">
-              <a href="#metrics" className="text-sm gradient-text hover:opacity-80 transition-opacity">Metrics</a>
-            </nav>
+            <div className="flex items-center space-x-8">
+              <nav className="hidden md:flex items-center space-x-8">
+                <a href="#metrics" className="text-sm gradient-text hover:opacity-80 transition-opacity">Metrics</a>
+              </nav>
+              <SocialLinks />
+            </div>
           </div>
         </div>
       </header>
@@ -74,10 +106,11 @@ function App() {
 
       <footer className="mt-auto border-t border-gray-100 bg-white/50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-sm text-gray-600">
               © {new Date().getFullYear()} Scholar Metrics Analyzer. All rights reserved.
             </p>
+            <SocialLinks />
             <div className="flex items-center space-x-6">
               <button
                 onClick={() => setShowPrivacy(true)}

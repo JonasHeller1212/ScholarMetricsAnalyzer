@@ -1,6 +1,7 @@
-import React from 'react';
-import { GraduationCap, CheckCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { GraduationCap, CheckCircle, Search } from 'lucide-react';
 import { SearchBar } from './SearchBar';
+import { ScholarSearchModal } from './ScholarSearchModal';
 
 interface LandingPageProps {
   onSearch: (url: string) => void;
@@ -8,6 +9,8 @@ interface LandingPageProps {
 }
 
 export function LandingPage({ onSearch, loading }: LandingPageProps) {
+  const [showScholarSearch, setShowScholarSearch] = useState(false);
+
   return (
     <main>
       <section className="relative min-h-[calc(100vh-80px)] flex items-center justify-center px-6">
@@ -34,6 +37,13 @@ export function LandingPage({ onSearch, loading }: LandingPageProps) {
 
             <div className="w-full max-w-2xl">
               <SearchBar onSearch={onSearch} isLoading={loading} />
+              <button
+                onClick={() => setShowScholarSearch(true)}
+                className="mt-4 text-sm text-blue-600 hover:text-blue-700 flex items-center justify-center space-x-2 mx-auto"
+              >
+                <Search className="h-4 w-4" />
+                <span>Find your Google Scholar Link</span>
+              </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-24">
@@ -122,6 +132,11 @@ export function LandingPage({ onSearch, loading }: LandingPageProps) {
           </div>
         </div>
       </section>
+
+      <ScholarSearchModal 
+        isOpen={showScholarSearch} 
+        onClose={() => setShowScholarSearch(false)} 
+      />
     </main>
   );
 }

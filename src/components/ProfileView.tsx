@@ -13,9 +13,10 @@ interface ProfileViewProps {
   error: string | null;
   onSearch: (url: string) => void;
   onReset: () => void;
+  socialLinks: React.ReactNode;
 }
 
-export function ProfileView({ data, loading, error, onSearch, onReset }: ProfileViewProps) {
+export default function ProfileView({ data, loading, error, onSearch, onReset, socialLinks }: ProfileViewProps) {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-12 space-y-4">
@@ -52,13 +53,16 @@ export function ProfileView({ data, loading, error, onSearch, onReset }: Profile
                 <p className="text-sm text-gray-600">Advanced analytics for Google Scholar profiles</p>
               </div>
             </div>
-            <button
-              onClick={onReset}
-              className="flex items-center space-x-2 px-4 py-2 text-sm gradient-text hover:opacity-80 rounded-lg transition-opacity"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span>Back to Landing Page</span>
-            </button>
+            <div className="flex items-center space-x-6">
+              {socialLinks}
+              <button
+                onClick={onReset}
+                className="flex items-center space-x-2 px-4 py-2 text-sm gradient-text hover:opacity-80 rounded-lg transition-opacity"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span>Back to Landing Page</span>
+              </button>
+            </div>
           </div>
           <SearchBar onSearch={onSearch} isLoading={loading} />
         </div>
