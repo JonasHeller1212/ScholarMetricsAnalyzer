@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Rectangle, CartesianGrid } from 'recharts';
-import { Info, ChevronDown, ChevronUp } from 'lucide-react';
+import { Info, ChevronDown, ChevronUp, TrendingUp, Calendar, Presentation as Citation } from 'lucide-react';
 
 interface CitationsChartProps {
   citationsPerYear: Record<number, number>;
@@ -23,7 +23,7 @@ const CustomBar = (props: any) => {
           >
             <path
               d="M 0 0 L 0 4"
-              stroke="#94a3b8"
+              stroke="#E84E10"
               strokeWidth="2"
               opacity="0.5"
             />
@@ -35,7 +35,7 @@ const CustomBar = (props: any) => {
           width={width}
           height={height}
           fill="url(#prediction-pattern)"
-          stroke="#94a3b8"
+          stroke="#E84E10"
           strokeWidth={1}
         />
       </g>
@@ -119,10 +119,74 @@ export function CitationsChart({ citationsPerYear }: CitationsChartProps) {
     return filteredData;
   }, [citationsPerYear, timeRange]);
 
+  // Calculate summary statistics
+  const stats = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const recentYears = chartData.filter(d => d.year > currentYear - 5);
+    
+    const totalCitations = recentYears.reduce((sum, d) => sum + d.actualCitations, 0);
+    const avgCitationsPerYear = Math.round(totalCitations / recentYears.length);
+    
+    const growthRates = recentYears.map(d => d.yearOverYearGrowth).filter(rate => !isNaN(rate));
+    const avgGrowthRate = growthRates.length > 0
+      ? Math.round(growthRates.reduce((sum, rate) => sum + rate, 0) / growthRates.length)
+      : 0;
+    
+    const peakYear = chartData.reduce((max, d) => 
+      d.actualCitations > max.citations ? { year: d.year, citations: d.actualCitations } : max,
+      { year: 0, citations: 0 }
+    );
+
+    return {
+      avgCitationsPerYear,
+      avgGrowthRate,
+      peakYear
+    };
+  }, [chartData]);
+
   return (
     <div className="space-y-4">
       <div className="flex items-start justify-between">
-        <h4 className="text-sm font-medium text-gray-900">Citation Trends & Projections</h4>
+        <div>
+          <h4 className="text-sm font-medium text-gray-900 flex items-center">
+            <Citation className="h-4 w-4 text-blue-600 mr-2" />
+            Citation Trends & Projections
+          </h4>
+          <div className="mt-2 grid grid-cols-3 gap-4">
+            <div className="bg-blue-50 rounded-lg p-3">
+              <div className="flex items-center text-xs text-blue-600 mb-1">
+                <TrendingUp className="h-3.5 w-3.5 mr-1" />
+                Average Growth
+              </div>
+              <div className="text-lg font-semibold text-blue-900">
+                {stats.avgGrowthRate > 0 ? '+' : ''}{stats.avgGrowthRate}%
+              </div>
+              <div className="text-xs text-blue-600">per year</div>
+            </div>
+            <div className="bg-blue-50 rounded-lg p-3">
+              <div className="flex items-center text-xs text-blue-600 mb-1">
+                <Citation className="h-3.5 w-3.5 mr-1" />
+                Average Citations
+              </div>
+              <div className="text-lg font-semibold text-blue-900">
+                {stats.avgCitationsPerYear.toLocaleString()}
+              </div>
+              <div className="text-xs text-blue-600">per year</div>
+            </div>
+            <div className="bg-blue-50 rounded-lg p-3">
+              <div className="flex items-center text-xs text-blue-600 mb-1">
+                <Calendar className="h-3.5 w-3.5 mr-1" />
+                Peak Year
+              </div>
+              <div className="text-lg font-semibold text-blue-900">
+                {stats.peakYear.year}
+              </div>
+              <div className="text-xs text-blue-600">
+                {stats.peakYear.citations.toLocaleString()} citations
+              </div>
+            </div>
+          </div>
+        </div>
         <div className="flex items-center space-x-2">
           <button
             onClick={() => setTimeRange('5y')}
@@ -222,12 +286,12 @@ export function CitationsChart({ citationsPerYear }: CitationsChartProps) {
             />
             <Bar 
               dataKey="actualCitations"
-              fill="#3b82f6"
+              fill="#019DD4"
               stackId="citations"
             />
             <Bar 
               dataKey="predictedCitations"
-              fill="#94a3b8"
+              fill="#E84E10"
               stackId="citations"
               shape={<CustomBar isPredicted={true} />}
             />
@@ -238,11 +302,11 @@ export function CitationsChart({ citationsPerYear }: CitationsChartProps) {
       <div className="space-y-2">
         <div className="flex items-center justify-end space-x-4 text-xs text-gray-500">
           <div className="flex items-center space-x-1">
-            <div className="w-3 h-3 bg-blue-500"></div>
+            <div className="w-3 h-3 bg-[#019DD4]"></div>
             <span>Actual Citations</span>
           </div>
           <div className="flex items-center space-x-1">
-            <div className="w-3 h-3 bg-gray-400 bg-stripe"></div>
+            <div className="w-3 h-3 bg-[#E84E10] bg-stripe"></div>
             <span>Projected</span>
           </div>
         </div>
@@ -251,13 +315,14 @@ export function CitationsChart({ citationsPerYear }: CitationsChartProps) {
           <div className="flex items-start space-x-2">
             <Info className="h-4 w-4 text-blue-500 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="font-medium text-blue-900 mb-1">About the Projection</p>
-              <p>
-                The projection for the current year is a simple linear extrapolation based on the citations received so far. 
-                It assumes the current citation rate will continue uniformly throughout the year. This is a simplified model 
-                and actual results may vary significantly. The projection should be used as a rough estimate only and not 
-                relied upon for decision making.
-              </p>
+              <p className="font-medium text-blue-900 mb-1">Citation Analysis</p>
+              <ul className="space-y-1 text-blue-700">
+                <li>• Average growth rate shows citation momentum over recent years</li>
+                <li>• Peak year indicates highest citation impact period</li>
+                <li>• Projections are based on current year's citation rate</li>
+                <li>• Growth patterns help identify research impact trends</li>
+                <li>• Consider field-specific citation patterns when interpreting</li>
+              </ul>
             </div>
           </div>
         </div>

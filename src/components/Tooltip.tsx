@@ -9,9 +9,10 @@ interface TooltipProps {
     link?: string;
   };
   children: React.ReactNode;
+  position?: 'top' | 'bottom';
 }
 
-export function Tooltip({ content, children }: TooltipProps) {
+export function Tooltip({ content, children, position = 'bottom' }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
   const hideTimeoutRef = useRef<number>();
 
@@ -34,7 +35,11 @@ export function Tooltip({ content, children }: TooltipProps) {
       onMouseLeave={handleMouseLeave}>
       {isVisible && (
         <div 
-          className="absolute z-50 w-72 p-4 bottom-full mb-2 -translate-x-1/2 left-1/2 bg-white/95 backdrop-blur-lg rounded-xl shadow-lg border border-gray-100/50"
+          className={`absolute z-50 w-72 p-4 ${
+            position === 'top' 
+              ? 'bottom-full mb-2' 
+              : 'top-full mt-2'
+          } -translate-x-1/2 left-1/2 bg-white/95 backdrop-blur-lg rounded-xl shadow-lg border border-gray-100/50`}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
@@ -67,8 +72,12 @@ export function Tooltip({ content, children }: TooltipProps) {
               )}
             </div>
             
-            {/* Add arrow pointing down */}
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-white/95 transform rotate-45 border-r border-b border-gray-100/50"></div>
+            {/* Add arrow pointing in the right direction */}
+            <div className={`absolute ${
+              position === 'top' 
+                ? '-bottom-2 border-t border-r' 
+                : '-top-2 border-b border-r'
+            } left-1/2 -translate-x-1/2 w-3 h-3 bg-white/95 transform rotate-45 border-gray-100/50`}></div>
           </div>
         </div>
       )}

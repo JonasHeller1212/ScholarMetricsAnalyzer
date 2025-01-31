@@ -1,3 +1,10 @@
+export interface JournalRanking {
+  jcrQuartile?: 1 | 2 | 3 | 4;  // Q1, Q2, Q3, Q4
+  absRanking?: '4*' | '4' | '3' | '2' | '1';  // ABS/AJG ranking
+  ft50?: boolean;  // Financial Times Top 50
+  scimagoQuartile?: 1 | 2 | 3 | 4;  // Alternative when JCR not available
+}
+
 export interface Topic {
   name: string;
   url: string;
@@ -11,6 +18,7 @@ export interface Publication {
   citations: number;
   venue: string;
   url: string;
+  journalRanking?: JournalRanking;
 }
 
 export interface Author {
@@ -51,14 +59,5 @@ export interface Author {
     topPaperCitations: number;
     topPaperTitle: string;
     topPaperUrl: string;
-    topCoAuthor?: string;
-    topCoAuthorImage?: string;
-    topCoAuthorUrl?: string;
-    topCoAuthorAffiliation?: string;
-    topCoAuthorPapers?: number;
-    topCoAuthorFirstYear?: number;
-    topCoAuthorLatestPaper?: string;
-    topCoAuthorLatestPaperUrl?: string;
-    topCoAuthorLatestPaperYear?: number;
   };
 }

@@ -5,27 +5,14 @@ All notable changes to Scholar Metrics Analyzer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.0] - 2025-01-30
+## [0.9.0] - 2025-01-30
 
 ### Added
+- Version indicator in UI
 - Automated changelog generation
 - Version history tracking
 - Deployment automation scripts
 - Improved build process
-
-### Changed
-- Updated package dependencies to latest versions
-- Streamlined deployment workflow
-- Enhanced documentation
-
-### Fixed
-- Date formatting in changelog
-- Version numbering consistency
-- Build configuration issues
-
-## [1.1.0] - 2025-01-30
-
-### Added
 - Scholar profile search helper modal
 - URL validation for Google Scholar profiles
 - Loading states and error handling for profile analysis
@@ -34,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Advanced citation trend analysis with projections
 
 ### Changed
+- Updated package dependencies to latest versions
+- Streamlined deployment workflow
+- Enhanced documentation
 - Improved UI/UX with smoother transitions
 - Enhanced error messages with clear user guidance
 - Optimized profile data loading and analysis
@@ -44,16 +34,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Citation chart rendering optimization
 - Profile image fallback handling
 - Search validation edge cases
-
-## [1.0.0] - 2025-01-29
-
-### Added
-- Initial release of Scholar Metrics Analyzer
-- Advanced citation metrics analysis (h-index, g-index, i10-index)
-- Publication analysis and visualization
-- Co-author network analysis
-- Citation trends and charts
-- Comprehensive profile insights
-- Real-time data processing
-- Responsive design for all devices
-- Social media integration
+- Date formatting in changelog
+- Version numbering consistency
+- Build configuration issues

@@ -7,6 +7,8 @@ import { PrivacyModal } from './components/PrivacyModal';
 import { TermsModal } from './components/TermsModal';
 import { fetchScholarProfile } from './utils/scholarApi';
 import type { Author } from './types/scholar';
+// Import version from package.json
+import packageJson from '../package.json';
 
 const SOCIAL_LINKS = {
   linkedin: 'https://www.linkedin.com/in/hellerjonas/',
@@ -88,7 +90,10 @@ function App() {
                 <GraduationCap className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold gradient-text">Scholar Metrics Analyzer</h1>
+                <div className="flex items-center space-x-2">
+                  <h1 className="text-xl font-bold gradient-text">Scholar Metrics Analyzer</h1>
+                  <span className="text-xs text-gray-400 px-2 py-0.5 bg-gray-100 rounded-full">v{packageJson.version}</span>
+                </div>
                 <p className="text-sm text-gray-600">Advanced academic analytics</p>
               </div>
             </div>

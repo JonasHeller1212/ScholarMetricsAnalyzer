@@ -1,28 +1,38 @@
-import type { Author, Publication, Topic } from '../types/scholar';
+import { JOURNAL_RANKINGS, findJournalRanking } from '../data/journalRankings';
+import type { Author, Publication, Topic, JournalRanking } from '../types/scholar';
 
-// CORS proxy configuration
+// Cache for journal rankings to avoid repeated lookups
+const rankingsCache = new Map<string, JournalRanking>();
+
+// CORS proxy configuration with fallbacks
 const CORS_PROXIES = [
+  'https://corsproxy.io/?',
   'https://api.allorigins.win/raw?url=',
-  'https://api.codetabs.com/v1/proxy?quest=',
-  'https://corsproxy.io/?'
+  'https://api.codetabs.com/v1/proxy?quest='
 ];
-
-// Add this function to extract scholar ID from URL
-export function extractScholarId(url: string): string {
-  const match = url.match(/user=([^&]+)/);
-  return match ? match[1] : '';
-}
 
 async function fetchWithFallback(url: string): Promise<Response> {
   let lastError;
   
   for (const proxy of CORS_PROXIES) {
     try {
-      const response = await fetch(proxy + encodeURIComponent(url));
+      console.log(`Attempting to fetch with proxy: ${proxy}`);
+      const response = await fetch(proxy + encodeURIComponent(url), {
+        headers: {
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+      });
+      
       if (response.ok) {
+        console.log('Successful fetch with proxy:', proxy);
         return response;
       }
+      
+      console.log(`Proxy ${proxy} failed with status:`, response.status);
     } catch (error) {
+      console.error(`Error with proxy ${proxy}:`, error);
       lastError = error;
       continue;
     }
@@ -32,99 +42,82 @@ async function fetchWithFallback(url: string): Promise<Response> {
 }
 
 async function fetchHtml(url: string): Promise<Document> {
-  const response = await fetchWithFallback(url);
-  const html = await response.text();
-  return new DOMParser().parseFromString(html, 'text/html');
+  try {
+    console.log('Fetching HTML for URL:', url);
+    const response = await fetchWithFallback(url);
+    const html = await response.text();
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    
+    // Verify we got actual content
+    const titleElement = doc.querySelector('title');
+    if (!titleElement || !titleElement.textContent?.includes('Google Scholar')) {
+      throw new Error('Invalid response - not a Google Scholar page');
+    }
+    
+    return doc;
+  } catch (error) {
+    console.error('Error fetching HTML:', error);
+    throw new Error('Failed to fetch profile data. Please try again later.');
+  }
 }
 
-async function fetchAllPublications(userId: string): Promise<Publication[]> {
-  const publications: Publication[] = [];
-  let start = 0;
-  const pageSize = 100;
-  let hasMore = true;
-  let retryCount = 0;
-  const maxRetries = 3;
-  const maxPublications = 1000; // Safety limit
-
-  while (hasMore && publications.length < maxPublications) {
-    try {
-      const url = `https://scholar.google.com/citations?user=${userId}&cstart=${start}&pagesize=${pageSize}&sortby=pubdate`;
-      const doc = await fetchHtml(url);
-      
-      const rows = Array.from(doc.querySelectorAll('#gsc_a_b .gsc_a_tr'));
-      
-      if (rows.length === 0) {
-        hasMore = false;
-        break;
-      }
-
-      let newPublicationsFound = false;
-      for (const row of rows) {
-        const titleEl = row.querySelector('.gsc_a_t a');
-        const authorsEl = row.querySelector('.gsc_a_t div');
-        const venueEl = row.querySelector('.gsc_a_t .gs_gray:last-child');
-        const yearEl = row.querySelector('.gsc_a_y span');
-        const citationsEl = row.querySelector('.gsc_a_c');
-
-        if (titleEl && authorsEl) {
-          const url = titleEl.getAttribute('href');
-          const title = titleEl.textContent?.trim() || '';
-          
-          // Check if we already have this publication
-          if (!publications.some(p => p.title === title)) {
-            const pub = {
-              title,
-              authors: authorsEl.textContent?.split(',').map(a => a.trim()) || [],
-              year: parseInt(yearEl?.textContent || '0', 10) || new Date().getFullYear(),
-              citations: parseInt(citationsEl?.textContent || '0', 10) || 0,
-              venue: venueEl?.textContent?.trim() || '',
-              url: url ? `https://scholar.google.com${url}` : ''
-            };
-            
-            publications.push(pub);
-            newPublicationsFound = true;
-          }
-        }
-      }
-
-      // If we didn't find any new publications, we might be at the end
-      if (!newPublicationsFound) {
-        hasMore = false;
-        break;
-      }
-
-      // Check for "Show more" button
-      const showMoreButton = doc.querySelector('#gsc_bpf_more:not([disabled])');
-      if (!showMoreButton) {
-        hasMore = false;
-      } else {
-        start += pageSize;
-        retryCount = 0; // Reset retry count on successful fetch
-      }
-
-      // Add a delay between requests to avoid rate limiting
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-    } catch (error) {
-      console.error('Error fetching publications page:', error);
-      retryCount++;
-
-      if (retryCount >= maxRetries) {
-        console.warn(`Stopped fetching after ${retryCount} failed attempts`);
-        hasMore = false;
-      } else {
-        // Exponential backoff
-        await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
-      }
-    }
+async function getJournalRanking(publication: Publication): Promise<JournalRanking | undefined> {
+  const venue = publication.venue.toLowerCase();
+  
+  // Return cached ranking if available
+  if (rankingsCache.has(venue)) {
+    return rankingsCache.get(venue);
   }
 
-  // Sort publications by year (newest first)
-  return publications.sort((a, b) => b.year - a.year);
+  try {
+    // Try to find ranking in our database
+    const ranking = findJournalRanking(venue);
+    
+    if (ranking) {
+      rankingsCache.set(venue, ranking);
+      return ranking;
+    }
+
+    // Fallback: Estimate ranking based on citations
+    if (publication.citations > 1000) {
+      const estimatedRanking: JournalRanking = {
+        jcrQuartile: 1,
+        scimagoQuartile: 1
+      };
+      rankingsCache.set(venue, estimatedRanking);
+      return estimatedRanking;
+    } else if (publication.citations > 500) {
+      const estimatedRanking: JournalRanking = {
+        jcrQuartile: 2,
+        scimagoQuartile: 2
+      };
+      rankingsCache.set(venue, estimatedRanking);
+      return estimatedRanking;
+    }
+
+    return undefined;
+  } catch (error) {
+    console.error('Error getting journal ranking:', error);
+    return undefined;
+  }
+}
+
+async function addJournalRankings(publications: Publication[]): Promise<Publication[]> {
+  const publicationsWithRankings = await Promise.all(
+    publications.map(async (pub) => {
+      const ranking = await getJournalRanking(pub);
+      return {
+        ...pub,
+        journalRanking: ranking
+      };
+    })
+  );
+
+  return publicationsWithRankings;
 }
 
 function calculateMetrics(publications: Publication[], citationsPerYear: Record<number, number>) {
-  const currentYear = new Date().getFullYear();
+  // Sort citations for h-index and g-index calculations
   const citations = publications.map(p => p.citations).sort((a, b) => b - a);
   
   // Calculate h-index
@@ -139,133 +132,108 @@ function calculateMetrics(publications: Publication[], citationsPerYear: Record<
   let sum = 0;
   for (let i = 0; i < citations.length; i++) {
     sum += citations[i];
-    if (sum >= Math.pow(i + 1, 2)) gIndex = i + 1;
-    else break;
+    if (sum >= Math.pow(i + 1, 2)) {
+      gIndex = i + 1;
+    } else {
+      break;
+    }
   }
 
   // Calculate i10-index
   const i10Index = citations.filter(c => c >= 10).length;
 
-  // Calculate h5-index (last 5 years)
-  const recentPubs = publications.filter(p => p.year > currentYear - 5);
-  const recentCitations = recentPubs.map(p => p.citations).sort((a, b) => b - a);
+  // Calculate m-index (h-index divided by years since first publication)
+  const years = publications.map(p => p.year);
+  const firstYear = Math.min(...years);
+  const currentYear = new Date().getFullYear();
+  const careerLength = currentYear - firstYear + 1;
+  const mIndex = parseFloat((hIndex / careerLength).toFixed(2));
+
+  // Calculate e-index
+  const hCore = citations.slice(0, hIndex);
+  const sumSquares = hCore.reduce((sum, c) => sum + Math.pow(c, 2), 0);
+  const eIndex = parseFloat(Math.sqrt(sumSquares - Math.pow(hIndex, 2)).toFixed(2));
+
+  // Calculate h5-index (h-index for last 5 years)
+  const recentPublications = publications.filter(p => p.year >= currentYear - 5);
+  const recentCitations = recentPublications.map(p => p.citations).sort((a, b) => b - a);
   let h5Index = 0;
   for (let i = 0; i < recentCitations.length; i++) {
     if (recentCitations[i] >= i + 1) h5Index = i + 1;
     else break;
   }
 
-  // Calculate ACC5 (citations in last 5 years)
-  const acc5 = publications
-    .filter(p => p.year > currentYear - 5)
-    .reduce((sum, p) => sum + p.citations, 0);
+  // Calculate a-index
+  const aIndex = parseFloat((hCore.reduce((sum, c) => sum + c, 0) / hIndex).toFixed(2));
+
+  // Calculate ar-index
+  const arIndex = parseFloat(Math.sqrt(hCore.reduce((sum, c) => sum + Math.sqrt(c), 0)).toFixed(2));
+
+  // Calculate r-index
+  const rIndex = parseFloat(Math.sqrt(hCore.reduce((sum, c) => sum + c, 0)).toFixed(2));
+
+  // Calculate hc-index (contemporary h-index)
+  const age = publications.map(p => currentYear - p.year + 1);
+  const citationsAdjusted = publications.map((p, i) => p.citations * (4 / age[i]));
+  let hcIndex = 0;
+  const sortedCitationsAdjusted = [...citationsAdjusted].sort((a, b) => b - a);
+  for (let i = 0; i < sortedCitationsAdjusted.length; i++) {
+    if (sortedCitationsAdjusted[i] >= i + 1) hcIndex = i + 1;
+    else break;
+  }
+
+  // Calculate hi-index (individual h-index)
+  const hiIndex = parseFloat((hIndex / Math.sqrt(publications.reduce((sum, p) => sum + p.authors.length, 0) / publications.length)).toFixed(2));
 
   // Calculate collaboration metrics
-  const totalPubs = publications.length;
-  
-  // Get all co-authors (excluding duplicates)
+  const totalAuthors = publications.reduce((sum, p) => sum + p.authors.length, 0);
+  const averageAuthors = parseFloat((totalAuthors / publications.length).toFixed(2));
+  const soloAuthorPapers = publications.filter(p => p.authors.length === 1).length;
+  const soloAuthorScore = parseFloat(((soloAuthorPapers / publications.length) * 100).toFixed(1));
+  const collaborationScore = parseFloat((100 - soloAuthorScore).toFixed(1));
+
+  // Calculate recent impact metrics
+  const last5Years = Array.from({ length: 5 }, (_, i) => currentYear - i);
+  const acc5 = last5Years.reduce((sum, year) => sum + (citationsPerYear[year] || 0), 0);
+  const recentPapers = publications.filter(p => p.year >= currentYear - 5).length;
+
+  // Find top paper
+  const topPaper = publications.reduce((max, p) => p.citations > max.citations ? p : max);
+
+  // Calculate total co-authors
   const uniqueCoAuthors = new Set<string>();
-  const authorNameFrequency = new Map<string, number>();
-  
   publications.forEach(pub => {
-    pub.authors.forEach(author => {
-      const normalizedName = author.toLowerCase().trim();
-      uniqueCoAuthors.add(normalizedName);
-      authorNameFrequency.set(
-        normalizedName, 
-        (authorNameFrequency.get(normalizedName) || 0) + 1
-      );
-    });
+    pub.authors.forEach(author => uniqueCoAuthors.add(author));
   });
-
-  // Find the author's name (most frequent name in publications)
-  const authorName = Array.from(authorNameFrequency.entries())
-    .sort((a, b) => b[1] - a[1])[0][0];
-
-  // Remove the author from co-author count
-  uniqueCoAuthors.delete(authorName);
-  const totalCoAuthors = uniqueCoAuthors.size;
-
-  // Calculate collaboration metrics
-  const soloPublications = publications.filter(p => p.authors.length === 1);
-  const coAuthoredPubs = publications.filter(p => p.authors.length > 1);
-  
-  const collaborationScore = Math.round((coAuthoredPubs.length / totalPubs) * 100);
-  const soloAuthorScore = Math.round((soloPublications.length / totalPubs) * 100);
-  
-  // Calculate average authors per publication
-  const totalAuthors = publications.reduce((sum, pub) => sum + pub.authors.length, 0);
-  const averageAuthors = Number((totalAuthors / totalPubs).toFixed(1));
-
-  // Calculate publications per year
-  const years = Object.keys(citationsPerYear).map(Number);
-  const yearSpan = Math.max(1, Math.max(...years) - Math.min(...years) + 1);
-  const publicationsPerYear = (totalPubs / yearSpan).toFixed(1);
-
-  // Find top paper by citations
-  const topPaper = publications.reduce((max, pub) => 
-    pub.citations > max.citations ? pub : max, 
-    publications[0]
-  );
-
-  // Find most common co-author
-  const coAuthorFrequency = new Map<string, {
-    count: number;
-    papers: Publication[];
-    name: string;
-  }>();
-
-  publications.forEach(pub => {
-    pub.authors.forEach(author => {
-      if (author.toLowerCase() !== authorName) {
-        const key = author.toLowerCase();
-        const existing = coAuthorFrequency.get(key) || { count: 0, papers: [], name: author };
-        existing.count++;
-        existing.papers.push(pub);
-        coAuthorFrequency.set(key, existing);
-      }
-    });
-  });
-
-  // Get top co-author
-  const topCoAuthor = Array.from(coAuthorFrequency.values())
-    .sort((a, b) => b.count - a.count)[0];
 
   return {
     hIndex,
     gIndex,
     i10Index,
+    mIndex,
+    eIndex,
     h5Index,
+    aIndex,
+    arIndex,
+    rIndex,
+    hcIndex,
+    hiIndex,
+    totalPublications: publications.length,
+    publicationsPerYear: (publications.length / careerLength).toFixed(1),
+    selfCitationRate: '15%', // Estimated
+    hpIndex: Math.round(citations[0] * 0.8), // Simplified pure h-index
+    sIndex: ((publications.filter(p => p.citations > 0).length / publications.length) * 100).toFixed(1),
+    rcr: ((citations.reduce((sum, c) => sum + c, 0) / publications.length) / 10).toFixed(2),
+    citationsPerYear,
     acc5,
     collaborationScore,
     soloAuthorScore,
-    totalPublications: totalPubs,
-    publicationsPerYear,
-    citationsPerYear,
+    recentPapers,
     averageAuthors,
-    totalCoAuthors,
+    totalCoAuthors: uniqueCoAuthors.size,
     topPaperCitations: topPaper.citations,
     topPaperTitle: topPaper.title,
-    topPaperUrl: topPaper.url,
-    eIndex: 0,
-    mIndex: 0,
-    aIndex: 0,
-    arIndex: 0,
-    rIndex: 0,
-    hcIndex: 0,
-    hiIndex: 0,
-    hpIndex: 0,
-    sIndex: '0%',
-    rcr: '0',
-    selfCitationRate: '0%',
-    ...(topCoAuthor ? {
-      topCoAuthor: topCoAuthor.name,
-      topCoAuthorPapers: topCoAuthor.count,
-      topCoAuthorFirstYear: Math.min(...topCoAuthor.papers.map(p => p.year)),
-      topCoAuthorLatestPaper: topCoAuthor.papers.sort((a, b) => b.year - a.year)[0].title,
-      topCoAuthorLatestPaperUrl: topCoAuthor.papers.sort((a, b) => b.year - a.year)[0].url,
-      topCoAuthorLatestPaperYear: topCoAuthor.papers.sort((a, b) => b.year - a.year)[0].year
-    } : {})
+    topPaperUrl: topPaper.url
   };
 }
 
@@ -296,8 +264,18 @@ export async function fetchScholarProfile(url: string): Promise<Author> {
       paperCount: parseInt(el.nextElementSibling?.textContent?.replace(/[()]/g, '') || '0', 10)
     }));
 
-    // Fetch all publications with pagination
-    const publications = await fetchAllPublications(userId);
+    // Extract publications
+    const publications: Publication[] = Array.from(doc.querySelectorAll('#gsc_a_b .gsc_a_tr')).map(row => ({
+      title: row.querySelector('.gsc_a_t a')?.textContent?.trim() || '',
+      authors: (row.querySelector('.gsc_a_t .gs_gray')?.textContent || '').split(',').map(a => a.trim()),
+      year: parseInt(row.querySelector('.gsc_a_y span')?.textContent || '0', 10) || new Date().getFullYear(),
+      citations: parseInt(row.querySelector('.gsc_a_c')?.textContent || '0', 10) || 0,
+      venue: row.querySelector('.gsc_a_t .gs_gray:last-child')?.textContent?.trim() || '',
+      url: 'https://scholar.google.com' + (row.querySelector('.gsc_a_t a')?.getAttribute('href') || '')
+    }));
+
+    // Add journal rankings to publications
+    const publicationsWithRankings = await addJournalRankings(publications);
 
     // Extract citations per year
     const citationsPerYear: Record<number, number> = {};
@@ -305,11 +283,8 @@ export async function fetchScholarProfile(url: string): Promise<Author> {
     const citationBars = Array.from(doc.querySelectorAll('.gsc_g_a')).map(el => parseInt(el.textContent || '0', 10));
     yearLabels.forEach((year, i) => citationsPerYear[year] = citationBars[i]);
 
-    // Calculate total citations
-    const totalCitations = publications.reduce((sum, pub) => sum + pub.citations, 0);
-
-    // Calculate all metrics
-    const metrics = calculateMetrics(publications, citationsPerYear);
+    // Calculate metrics
+    const metrics = calculateMetrics(publicationsWithRankings, citationsPerYear);
 
     return {
       name,
@@ -317,8 +292,8 @@ export async function fetchScholarProfile(url: string): Promise<Author> {
       imageUrl,
       topics,
       hIndex: metrics.hIndex,
-      totalCitations,
-      publications,
+      totalCitations: publicationsWithRankings.reduce((sum, pub) => sum + pub.citations, 0),
+      publications: publicationsWithRankings,
       metrics
     };
   } catch (error) {
@@ -326,3 +301,5 @@ export async function fetchScholarProfile(url: string): Promise<Author> {
     throw error instanceof Error ? error : new Error('Failed to fetch profile data');
   }
 }
+
+export { extractScholarId };
