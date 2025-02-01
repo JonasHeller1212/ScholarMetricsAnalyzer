@@ -1,6 +1,6 @@
 # Scholar Metrics Analyzer
 
-A Chrome extension that enhances Google Scholar profiles with advanced metrics and analytics.
+Enhances Google Scholar profiles with advanced metrics and analytics.
 
 ## Features
 
