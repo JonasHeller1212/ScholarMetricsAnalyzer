@@ -5,7 +5,31 @@ All notable changes to Scholar Metrics Analyzer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.9.0] - 2025-01-30
+## [0.9.15] - 2024-01-31
+
+### Added
+- Current year-over-year growth rate display
+- Projected growth rate for current year
+- Enhanced citation trend visualization
+- Improved growth rate calculations
+- Time range selection for metrics
+- Detailed tooltips for all metrics
+
+### Changed
+- Optimized citation chart rendering
+- Enhanced growth rate display with color coding
+- Improved projection calculations
+- Updated metrics explanations
+- Refined mobile responsiveness
+
+### Fixed
+- Citation projection display issues
+- Growth rate calculation accuracy
+- Chart rendering performance
+- Year-over-year growth display
+- Loading state handling
+
+## [0.9.1] - 2024-01-30
 
 ### Added
 - Version indicator in UI

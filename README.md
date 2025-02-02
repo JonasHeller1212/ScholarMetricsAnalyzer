@@ -1,17 +1,23 @@
 # Scholar Metrics Analyzer
 
-Enhances Google Scholar profiles with advanced metrics and analytics.
+A powerful web application for analyzing and visualizing Google Scholar profiles with advanced metrics and analytics.
 
 ## Features
 
 - Advanced citation metrics (h-index, g-index, i10-index)
-- Publication analysis
-- Self-citation tracking
+- Publication analysis and trends
+- Citation network visualization
 - Co-author network analysis
 - Visual metrics display
 - Detailed tooltips with metric explanations
+- Real-time profile analysis
+- Mobile-responsive design
 
-## Installation
+## Live Demo
+
+Visit [Scholar Metrics Analyzer](https://scholarmetricsanalzyer.netlify.app) to try it out!
+
+## Development
 
 1. Clone the repository:
    ```bash
@@ -23,42 +29,22 @@ Enhances Google Scholar profiles with advanced metrics and analytics.
    npm install
    ```
 
-3. Build the extension:
-   ```bash
-   npm run build
-   ```
-
-4. Load the extension in Chrome:
-   - Open Chrome and go to `chrome://extensions/`
-   - Enable "Developer mode" in the top right
-   - Click "Load unpacked"
-   - Select the `dist` folder from the project
-
-## Development
-
-1. Start the development server:
+3. Start the development server:
    ```bash
    npm run dev
    ```
 
-2. Make your changes
-3. The extension will automatically rebuild when files change
+4. Make your changes
+5. The application will automatically rebuild when files change
 
-## Testing
+## Building for Production
 
-1. Build the extension:
+1. Build the application:
    ```bash
    npm run build
    ```
 
-2. Load the extension in Chrome:
-   - Go to `chrome://extensions/`
-   - Enable Developer mode
-   - Click "Load unpacked"
-   - Select the `dist` folder
-
-3. Navigate to any Google Scholar profile (e.g., https://scholar.google.com/citations?user=...)
-4. The enhanced metrics will appear automatically
+2. The built files will be in the `dist` directory
 
 ## Contributing
 

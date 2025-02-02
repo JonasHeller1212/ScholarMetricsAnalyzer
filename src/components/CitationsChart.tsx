@@ -1,14 +1,36 @@
 import React, { useMemo, useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Rectangle, CartesianGrid } from 'recharts';
-import { Info, ChevronDown, ChevronUp, TrendingUp, Calendar, Presentation as Citation } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Rectangle, CartesianGrid, LabelList } from 'recharts';
+import { Info, TrendingUp, Calendar, Presentation as Citation, Clock } from 'lucide-react';
+import { calculateGrowthRates } from '../services/metrics/trends/growth-metrics';
+import { calculateAverageCitations } from '../services/metrics/citation/impact-metrics';
+import { findPeakYear } from '../services/metrics/trends/trend-analysis';
+import type { TimeRange } from '../types/scholar';
 
 interface CitationsChartProps {
-  citationsPerYear: Record<number, number>;
+  citationsPerYear: Record<string, number>;
+}
+
+function calculateCurrentYearProjection(currentYearCitations: number): number {
+  const currentDate = new Date();
+  const currentMonth = currentDate.getMonth(); // 0-11
+  const currentDay = currentDate.getDate();
+  
+  // Calculate how much of the year has passed
+  const daysInYear = 365;
+  const daysPassed = Math.floor((currentMonth * 30.44) + currentDay);
+  const yearProgress = daysPassed / daysInYear;
+  
+  // Project citations for the full year based on current rate
+  if (yearProgress > 0) {
+    return Math.round(currentYearCitations / yearProgress);
+  }
+  
+  return currentYearCitations;
 }
 
 // Custom bar component for actual and predicted citations
 const CustomBar = (props: any) => {
-  const { x, y, width, height, isPredicted, fill } = props;
+  const { x, y, width, height, isPredicted } = props;
   
   if (isPredicted) {
     return (
@@ -42,29 +64,74 @@ const CustomBar = (props: any) => {
     );
   }
 
-  return <Rectangle x={x} y={y} width={width} height={height} fill={fill} />;
+  return <Rectangle x={x} y={y} width={width} height={height} fill="#019DD4" />;
 };
 
-function calculateCurrentYearProjection(currentYearCitations: number): number {
-  const currentDate = new Date();
-  const currentMonth = currentDate.getMonth(); // 0-11
-  const currentDay = currentDate.getDate();
+// Custom label component for growth rates
+const GrowthLabel = (props: any) => {
+  const { x, y, width, value } = props;
+  if (!value) return null;
+
+  const isPositive = value > 0;
+  const label = `${isPositive ? '+' : ''}${value.toFixed(1)}%`;
   
-  // Calculate how much of the year has passed
-  const daysInYear = 365;
-  const daysPassed = Math.floor((currentMonth * 30.44) + currentDay); // Using average month length
-  const yearProgress = daysPassed / daysInYear;
+  return (
+    <text
+      x={x + width / 2}
+      y={y - 8}
+      fill={isPositive ? '#16a34a' : '#dc2626'}
+      textAnchor="middle"
+      fontSize="11"
+      fontWeight="500"
+    >
+      {label}
+    </text>
+  );
+};
+
+// Custom label component for current year growth rates
+const CurrentYearGrowthLabel = (props: any) => {
+  const { x, y, width, value, projectedValue } = props;
+  if (!value && !projectedValue) return null;
+
+  const currentGrowth = value || 0;
+  const projectedGrowth = projectedValue || 0;
   
-  // Project citations for the full year based on current rate
-  if (yearProgress > 0) {
-    return Math.round(currentYearCitations / yearProgress);
-  }
-  
-  return currentYearCitations;
-}
+  return (
+    <g>
+      {/* Current YoY growth */}
+      {currentGrowth !== 0 && (
+        <text
+          x={x + width / 2}
+          y={y - 24}
+          fill={currentGrowth > 0 ? '#16a34a' : '#dc2626'}
+          textAnchor="middle"
+          fontSize="11"
+          fontWeight="500"
+        >
+          Current: {currentGrowth > 0 ? '+' : ''}{currentGrowth.toFixed(1)}%
+        </text>
+      )}
+      
+      {/* Projected YoY growth */}
+      {projectedGrowth !== 0 && (
+        <text
+          x={x + width / 2}
+          y={y - 8}
+          fill="#e84e10"
+          textAnchor="middle"
+          fontSize="11"
+          fontWeight="500"
+        >
+          Projected: {projectedGrowth > 0 ? '+' : ''}{projectedGrowth.toFixed(1)}%
+        </text>
+      )}
+    </g>
+  );
+};
 
 export function CitationsChart({ citationsPerYear }: CitationsChartProps) {
-  const [timeRange, setTimeRange] = useState<'5y' | '10y' | 'all'>('5y');
+  const [timeRange, setTimeRange] = useState<TimeRange>('5y');
 
   const chartData = useMemo(() => {
     const currentYear = new Date().getFullYear();
@@ -76,73 +143,79 @@ export function CitationsChart({ citationsPerYear }: CitationsChartProps) {
         citations,
         actualCitations: citations,
         predictedCitations: 0,
-        yearOverYearGrowth: 0
+        yearOverYearGrowth: 0,
+        projectedGrowth: 0
       }))
       .sort((a, b) => a.year - b.year);
 
-    // Calculate year-over-year growth rates for completed years
-    for (let i = 1; i < historicalData.length; i++) {
-      const prevYear = historicalData[i - 1].citations;
-      const currentYear = historicalData[i].citations;
-      if (prevYear > 0 && historicalData[i].year < new Date().getFullYear()) {
+    // Filter data based on selected time range
+    const filteredData = historicalData.filter(d => {
+      switch (timeRange) {
+        case '5y':
+          return d.year > currentYear - 5;
+        case '10y':
+          return d.year > currentYear - 10;
+        default:
+          return true;
+      }
+    });
+
+    // Calculate year-over-year growth rates
+    for (let i = 1; i < filteredData.length; i++) {
+      const prevYear = filteredData[i - 1].actualCitations;
+      const currentYear = filteredData[i].actualCitations;
+      if (prevYear > 0) {
         const growthRate = ((currentYear - prevYear) / prevYear) * 100;
-        historicalData[i].yearOverYearGrowth = Math.round(growthRate * 10) / 10;
+        filteredData[i].yearOverYearGrowth = growthRate;
       }
     }
 
-    // Handle current year projection
-    const currentYearData = historicalData.find(d => d.year === currentYear);
+    // Add projection for current year
+    const currentYearData = filteredData.find(d => d.year === currentYear);
     if (currentYearData) {
       const projectedTotal = calculateCurrentYearProjection(currentYearData.actualCitations);
       currentYearData.predictedCitations = Math.max(0, projectedTotal - currentYearData.actualCitations);
       
       // Calculate projected growth rate
-      const previousYearData = historicalData.find(d => d.year === currentYear - 1);
-      if (previousYearData) {
-        const projectedGrowth = ((projectedTotal - previousYearData.citations) / previousYearData.citations) * 100;
-        currentYearData.yearOverYearGrowth = Math.round(projectedGrowth * 10) / 10;
+      const prevYearData = filteredData.find(d => d.year === currentYear - 1);
+      if (prevYearData && prevYearData.actualCitations > 0) {
+        const projectedGrowth = ((projectedTotal - prevYearData.actualCitations) / prevYearData.actualCitations) * 100;
+        currentYearData.projectedGrowth = projectedGrowth;
       }
     }
-
-    // Filter data based on selected time range
-    const filteredData = (() => {
-      switch (timeRange) {
-        case '5y':
-          return historicalData.filter(d => d.year > currentYear - 5);
-        case '10y':
-          return historicalData.filter(d => d.year > currentYear - 10);
-        default:
-          return historicalData;
-      }
-    })();
 
     return filteredData;
   }, [citationsPerYear, timeRange]);
 
-  // Calculate summary statistics
+  // Calculate summary statistics based on filtered data
   const stats = useMemo(() => {
-    const currentYear = new Date().getFullYear();
-    const recentYears = chartData.filter(d => d.year > currentYear - 5);
-    
-    const totalCitations = recentYears.reduce((sum, d) => sum + d.actualCitations, 0);
-    const avgCitationsPerYear = Math.round(totalCitations / recentYears.length);
-    
-    const growthRates = recentYears.map(d => d.yearOverYearGrowth).filter(rate => !isNaN(rate));
-    const avgGrowthRate = growthRates.length > 0
-      ? Math.round(growthRates.reduce((sum, rate) => sum + rate, 0) / growthRates.length)
-      : 0;
-    
-    const peakYear = chartData.reduce((max, d) => 
-      d.actualCitations > max.citations ? { year: d.year, citations: d.actualCitations } : max,
-      { year: 0, citations: 0 }
+    const { avgGrowthRate } = calculateGrowthRates(citationsPerYear, timeRange);
+    const { perYear: avgCitations } = calculateAverageCitations(
+      chartData.map(d => ({ year: d.year, citations: d.actualCitations })), 
+      timeRange
     );
+    const { year: peakYear, citations: peakCitations } = findPeakYear(citationsPerYear, timeRange);
 
     return {
-      avgCitationsPerYear,
       avgGrowthRate,
-      peakYear
+      avgCitations,
+      peakYear,
+      peakCitations
     };
-  }, [chartData]);
+  }, [chartData, timeRange, citationsPerYear]);
+
+  const timeRangeText = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    switch (timeRange) {
+      case '5y':
+        return `${currentYear - 4} - ${currentYear}`;
+      case '10y':
+        return `${currentYear - 9} - ${currentYear}`;
+      default:
+        const years = Object.keys(citationsPerYear).map(Number).sort();
+        return years.length ? `${years[0]} - ${currentYear}` : 'All time';
+    }
+  }, [timeRange, citationsPerYear]);
 
   return (
     <div className="space-y-4">
@@ -157,6 +230,10 @@ export function CitationsChart({ citationsPerYear }: CitationsChartProps) {
               <div className="flex items-center text-xs text-blue-600 mb-1">
                 <TrendingUp className="h-3.5 w-3.5 mr-1" />
                 Average Growth
+                <div className="ml-1 text-[10px] text-blue-400 flex items-center">
+                  <Clock className="h-3 w-3 mr-0.5" />
+                  {timeRangeText}
+                </div>
               </div>
               <div className="text-lg font-semibold text-blue-900">
                 {stats.avgGrowthRate > 0 ? '+' : ''}{stats.avgGrowthRate}%
@@ -167,9 +244,13 @@ export function CitationsChart({ citationsPerYear }: CitationsChartProps) {
               <div className="flex items-center text-xs text-blue-600 mb-1">
                 <Citation className="h-3.5 w-3.5 mr-1" />
                 Average Citations
+                <div className="ml-1 text-[10px] text-blue-400 flex items-center">
+                  <Clock className="h-3 w-3 mr-0.5" />
+                  {timeRangeText}
+                </div>
               </div>
               <div className="text-lg font-semibold text-blue-900">
-                {stats.avgCitationsPerYear.toLocaleString()}
+                {stats.avgCitations.toLocaleString()}
               </div>
               <div className="text-xs text-blue-600">per year</div>
             </div>
@@ -177,12 +258,16 @@ export function CitationsChart({ citationsPerYear }: CitationsChartProps) {
               <div className="flex items-center text-xs text-blue-600 mb-1">
                 <Calendar className="h-3.5 w-3.5 mr-1" />
                 Peak Year
+                <div className="ml-1 text-[10px] text-blue-400 flex items-center">
+                  <Clock className="h-3 w-3 mr-0.5" />
+                  {timeRangeText}
+                </div>
               </div>
               <div className="text-lg font-semibold text-blue-900">
-                {stats.peakYear.year}
+                {stats.peakYear}
               </div>
               <div className="text-xs text-blue-600">
-                {stats.peakYear.citations.toLocaleString()} citations
+                {stats.peakCitations.toLocaleString()} citations
               </div>
             </div>
           </div>
@@ -225,7 +310,7 @@ export function CitationsChart({ citationsPerYear }: CitationsChartProps) {
         <ResponsiveContainer width="100%" height="100%">
           <BarChart 
             data={chartData}
-            margin={{ top: 10, right: 30, left: 0, bottom: 5 }}
+            margin={{ top: 30, right: 30, left: 0, bottom: 5 }}
             barCategoryGap={2}
           >
             <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
@@ -276,7 +361,7 @@ export function CitationsChart({ citationsPerYear }: CitationsChartProps) {
                         <div className={`text-xs ${
                           data.yearOverYearGrowth > 0 ? 'text-green-600' : 'text-red-600'
                         } border-t border-gray-100 pt-1 mt-1`}>
-                          Year-over-Year Growth: {data.yearOverYearGrowth > 0 ? '+' : ''}{data.yearOverYearGrowth}%
+                          Year-over-Year Growth: {data.yearOverYearGrowth > 0 ? '+' : ''}{data.yearOverYearGrowth.toFixed(1)}%
                         </div>
                       )}
                     </div>
@@ -286,12 +371,41 @@ export function CitationsChart({ citationsPerYear }: CitationsChartProps) {
             />
             <Bar 
               dataKey="actualCitations"
-              fill="#019DD4"
+              shape={<CustomBar />}
               stackId="citations"
-            />
+            >
+              <LabelList
+                dataKey="yearOverYearGrowth"
+                content={({ x, y, width, value, index }: any) => {
+                  const data = chartData[index];
+                  const currentYear = new Date().getFullYear();
+                  
+                  if (data.year === currentYear) {
+                    return (
+                      <CurrentYearGrowthLabel
+                        x={x}
+                        y={y}
+                        width={width}
+                        value={value}
+                        projectedValue={data.projectedGrowth}
+                      />
+                    );
+                  }
+                  
+                  return (
+                    <GrowthLabel
+                      x={x}
+                      y={y}
+                      width={width}
+                      value={value}
+                    />
+                  );
+                }}
+                position="top"
+              />
+            </Bar>
             <Bar 
               dataKey="predictedCitations"
-              fill="#E84E10"
               stackId="citations"
               shape={<CustomBar isPredicted={true} />}
             />
@@ -317,7 +431,7 @@ export function CitationsChart({ citationsPerYear }: CitationsChartProps) {
             <div>
               <p className="font-medium text-blue-900 mb-1">Citation Analysis</p>
               <ul className="space-y-1 text-blue-700">
-                <li>• Average growth rate shows citation momentum over recent years</li>
+                <li>• Average growth rate shows citation momentum over selected time range ({timeRangeText})</li>
                 <li>• Peak year indicates highest citation impact period</li>
                 <li>• Projections are based on current year's citation rate</li>
                 <li>• Growth patterns help identify research impact trends</li>

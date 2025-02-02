@@ -3,6 +3,32 @@ import * as d3 from 'd3';
 import { Network, Share2, BookOpen, Presentation as Citation, Users, Info } from 'lucide-react';
 import type { Publication } from '../types/scholar';
 
+// Add helper function for name extraction
+function extractLastName(fullName: string): string {
+  // Common prefixes that indicate the start of a last name
+  const lastNamePrefixes = ['van ', 'von ', 'de ', 'del ', 'della ', 'di ', 'da ', 'dos ', 'das ', 'du ', 'den ', 'der '];
+  
+  // Split the name into parts
+  const nameParts = fullName.trim().split(' ');
+  
+  // If only one part, return it
+  if (nameParts.length === 1) {
+    return nameParts[0];
+  }
+  
+  // Check for compound last names with prefixes
+  for (let i = 0; i < nameParts.length - 1; i++) {
+    const possiblePrefix = nameParts[i].toLowerCase() + ' ';
+    if (lastNamePrefixes.includes(possiblePrefix)) {
+      // Return everything from the prefix onwards
+      return nameParts.slice(i).join(' ');
+    }
+  }
+  
+  // If no prefix found, return the last part
+  return nameParts[nameParts.length - 1];
+}
+
 interface Node {
   id: string;
   name: string;
@@ -28,7 +54,6 @@ export function CitationNetwork({ publications, fullScreen = false }: CitationNe
   const svgRef = useRef<SVGSVGElement>(null);
   const simulationRef = useRef<d3.Simulation<Node, Link> | null>(null);
   const [showCitations, setShowCitations] = useState(false);
-  const [showAllAuthors, setShowAllAuthors] = useState(false);
   const [connectionLimit, setConnectionLimit] = useState<10 | 20>(10);
 
   // Function to stop the current simulation
@@ -45,15 +70,9 @@ export function CitationNetwork({ publications, fullScreen = false }: CitationNe
     setShowCitations(!showCitations);
   };
 
-  const handleShowAllAuthors = () => {
-    stopSimulation();
-    setShowAllAuthors(!showAllAuthors);
-  };
-
   const handleConnectionLimit = (limit: 10 | 20) => {
     stopSimulation();
     setConnectionLimit(limit);
-    setShowAllAuthors(false);
   };
 
   useEffect(() => {
@@ -95,7 +114,6 @@ export function CitationNetwork({ publications, fullScreen = false }: CitationNe
 
     // Process co-authors and their relationships
     publications.forEach(pub => {
-      // Get co-authors for this publication (excluding main author)
       const coAuthors = pub.authors.filter(author => author !== mainAuthor);
       
       coAuthors.forEach(author => {
@@ -112,7 +130,6 @@ export function CitationNetwork({ publications, fullScreen = false }: CitationNe
         authorData.citations += pub.citations;
         authorData.papers.add(pub.title);
 
-        // Process co-author relationships
         coAuthors.forEach(coAuthor => {
           if (author !== coAuthor) {
             if (!authorData.coAuthors.has(coAuthor)) {
@@ -136,10 +153,8 @@ export function CitationNetwork({ publications, fullScreen = false }: CitationNe
       return valueB - valueA;
     });
 
-    // Filter top connections if not showing all
-    const filteredAuthors = showAllAuthors 
-      ? sortedAuthors 
-      : sortedAuthors.slice(0, connectionLimit);
+    // Filter top connections based on limit
+    const filteredAuthors = sortedAuthors.slice(0, connectionLimit);
 
     // Add filtered co-author nodes and their connections
     const addedAuthors = new Set<string>([mainAuthor]);
@@ -155,7 +170,6 @@ export function CitationNetwork({ publications, fullScreen = false }: CitationNe
       });
       addedAuthors.add(author);
 
-      // Add link to main author
       links.push({
         source: mainAuthor,
         target: author,
@@ -163,7 +177,6 @@ export function CitationNetwork({ publications, fullScreen = false }: CitationNe
         valueCitations: data.citations
       });
 
-      // Add links between co-authors
       data.coAuthors.forEach((coAuthorData, coAuthor) => {
         if (addedAuthors.has(coAuthor)) {
           links.push({
@@ -253,9 +266,12 @@ export function CitationNetwork({ publications, fullScreen = false }: CitationNe
       .attr('fill', d => d.group === 1 ? '#019DD4' : '#E84E10')
       .attr('fill-opacity', 0.8);
 
-    // Add labels to nodes
+    // Update the node labels to use the extracted last name
     node.append('text')
-      .text(d => d.name.split(' ')[1] || d.name)
+      .text(d => {
+        const lastName = extractLastName(d.name);
+        return lastName.length > 15 ? lastName.substring(0, 12) + '...' : lastName;
+      })
       .attr('x', 0)
       .attr('y', d => -Math.sqrt(showCitations ? d.sharedCitations / 5 : d.sharedPublications * 10) - 2)
       .attr('text-anchor', 'middle')
@@ -271,7 +287,7 @@ export function CitationNetwork({ publications, fullScreen = false }: CitationNe
       .attr('fill', 'white')
       .attr('font-size', fullScreen ? '10px' : '8px');
 
-    // Add tooltips
+    // Update tooltips to show full name
     node.append('title')
       .text(d => `${d.name}\n${showCitations ? 'Shared Citations' : 'Shared Publications'}: ${
         showCitations ? d.sharedCitations : d.sharedPublications
@@ -330,7 +346,7 @@ export function CitationNetwork({ publications, fullScreen = false }: CitationNe
     return () => {
       stopSimulation();
     };
-  }, [publications, fullScreen, showCitations, showAllAuthors, connectionLimit]);
+  }, [publications, fullScreen, showCitations, connectionLimit]);
 
   return (
     <div className={`bg-white/80 backdrop-blur-xl rounded-xl border border-primary-start/10 p-6 hover:shadow-lg transition-all ${
@@ -347,7 +363,7 @@ export function CitationNetwork({ publications, fullScreen = false }: CitationNe
               <button
                 onClick={() => handleConnectionLimit(10)}
                 className={`flex items-center space-x-1 px-2 py-1 rounded-lg text-xs transition-colors ${
-                  connectionLimit === 10 && !showAllAuthors
+                  connectionLimit === 10
                     ? 'bg-blue-100 text-blue-700'
                     : 'text-gray-600 hover:bg-gray-100'
                 }`}
@@ -362,7 +378,7 @@ export function CitationNetwork({ publications, fullScreen = false }: CitationNe
               <button
                 onClick={() => handleConnectionLimit(20)}
                 className={`flex items-center space-x-1 px-2 py-1 rounded-lg text-xs transition-colors ${
-                  connectionLimit === 20 && !showAllAuthors
+                  connectionLimit === 20
                     ? 'bg-blue-100 text-blue-700'
                     : 'text-gray-600 hover:bg-gray-100'
                 }`}
@@ -371,22 +387,6 @@ export function CitationNetwork({ publications, fullScreen = false }: CitationNe
               </button>
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-white rounded-lg shadow-lg border border-gray-100 text-xs hidden group-hover:block">
                 <p className="text-gray-700">Show top 20 co-authors by collaboration frequency</p>
-              </div>
-            </div>
-            <div className="group relative">
-              <button
-                onClick={handleShowAllAuthors}
-                className={`flex items-center space-x-1 px-2 py-1 rounded-lg text-xs transition-colors ${
-                  showAllAuthors
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                <Users className="h-3.5 w-3.5" />
-                <span>Show All</span>
-              </button>
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-white rounded-lg shadow-lg border border-gray-100 text-xs hidden group-hover:block">
-                <p className="text-gray-700">Display all co-authors in the network</p>
               </div>
             </div>
           </div>

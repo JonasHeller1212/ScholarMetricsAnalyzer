@@ -1,8 +1,17 @@
-// Basic types without journal rankings
+// Combine all types into a single file
+import type { ReactNode } from 'react';
+
+// Basic types
 export interface Topic {
   name: string;
   url: string;
   paperCount: number;
+}
+
+export interface JournalRanking {
+  absRanking?: '4*' | '4' | '3' | '2' | '1';
+  sjrRanking?: 'Q1' | 'Q2' | 'Q3' | 'Q4';
+  ft50?: boolean;
 }
 
 export interface Publication {
@@ -12,6 +21,7 @@ export interface Publication {
   year: number;
   citations: number;
   url: string;
+  journalRanking?: JournalRanking;
 }
 
 export interface Metrics {
@@ -55,6 +65,51 @@ export interface Author {
   totalCitations: number;
   publications: Publication[];
   metrics: Metrics;
+}
+
+// Service types
+export interface ScholarService {
+  fetchProfile(url: string): Promise<Author>;
+  fetchPublications(userId: string): Promise<Publication[]>;
+  validateProfileUrl(url: string): { isValid: boolean; userId?: string };
+}
+
+export interface MetricsCalculator {
+  calculateMetrics(publications: Publication[], citationsPerYear: Record<string, number>, authorName: string): Metrics;
+  calculateHIndex(citations: number[]): number;
+  calculateGIndex(citations: number[]): number;
+  calculateH5Index(publications: Publication[]): number;
+}
+
+export interface FetchOptions {
+  timeout?: number;
+  retries?: number;
+  delay?: number;
+}
+
+// Component prop types
+export interface MetricDisplayProps {
+  value: number;
+  label: string;
+  description?: string;
+  trend?: 'up' | 'down' | 'neutral';
+}
+
+export interface ProfileHeaderProps {
+  author: Author;
+  onRefresh?: () => void;
+  className?: string;
+}
+
+export interface CitationChartProps {
+  citationsPerYear: Record<number, number>;
+  className?: string;
+}
+
+export interface PublicationsListProps {
+  publications: Publication[];
+  onSort?: (field: SortField) => void;
+  className?: string;
 }
 
 // Utility types

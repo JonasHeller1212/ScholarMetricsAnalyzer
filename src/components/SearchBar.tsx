@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, ExternalLink, Loader2, AlertCircle } from 'lucide-react';
+import { Search, ExternalLink, Loader2, AlertCircle, BookOpen } from 'lucide-react';
 
 interface SearchBarProps {
   onSearch: (url: string) => void;
@@ -12,7 +12,7 @@ export function SearchBar({ onSearch, isLoading = false, compact = false }: Sear
   const [error, setError] = useState<string | null>(null);
 
   const validateUrl = (url: string): boolean => {
-    const scholarUrlPattern = /^https:\/\/scholar\.google\.com\/citations\?user=[\w-]+/;
+    const scholarUrlPattern = /^https:\/\/scholar\.google\.com\/citations\?(?:hl=\w+&)?user=[\w-]+/;
     return scholarUrlPattern.test(url.trim());
   };
 
@@ -30,12 +30,23 @@ export function SearchBar({ onSearch, isLoading = false, compact = false }: Sear
       return;
     }
 
+    // Normalize the URL format to ensure consistent handling
+    const urlObj = new URL(trimmedUrl);
+    const userId = urlObj.searchParams.get('user');
+    const normalizedUrl = `https://scholar.google.com/citations?user=${userId}`;
+
     setError(null);
-    onSearch(trimmedUrl);
+    onSearch(normalizedUrl);
   };
 
   const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setUrl(e.target.value);
+    setError(null);
+  };
+
+  const handleSampleLink = () => {
+    const sampleUrl = 'https://scholar.google.com/citations?user=NOSPtp8AAAAJ&hl=en';
+    setUrl(sampleUrl);
     setError(null);
   };
 
@@ -87,9 +98,19 @@ export function SearchBar({ onSearch, isLoading = false, compact = false }: Sear
       )}
       
       {!error && !compact && (
-        <div className="mt-2 text-xs text-gray-500 flex items-center space-x-1">
-          <Search className="h-3.5 w-3.5 gradient-icon" />
-          <span>Example: https://scholar.google.com/citations?user=NOSPtp8AAAAJ</span>
+        <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
+          <div className="flex items-center space-x-1">
+            <Search className="h-3.5 w-3.5 gradient-icon" />
+            <span>Enter a Google Scholar profile URL to analyze metrics</span>
+          </div>
+          <button
+            type="button"
+            onClick={handleSampleLink}
+            className="flex items-center space-x-1 text-blue-600 hover:text-blue-700 transition-colors"
+          >
+            <BookOpen className="h-3.5 w-3.5" />
+            <span>Try a sample profile</span>
+          </button>
         </div>
       )}
     </form>

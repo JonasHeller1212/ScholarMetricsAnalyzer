@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GraduationCap, CheckCircle, Search } from 'lucide-react';
+import { GraduationCap, CheckCircle, Search, TrendingUp, Network, BarChart, Presentation as Citation, Users, Award, BookOpen, ArrowRight, Sparkles, Zap } from 'lucide-react';
 import { SearchBar } from './SearchBar';
 import { ScholarSearchModal } from './ScholarSearchModal';
 
@@ -10,9 +10,10 @@ interface LandingPageProps {
 
 export function LandingPage({ onSearch, loading }: LandingPageProps) {
   const [showScholarSearch, setShowScholarSearch] = useState(false);
+  const [hoveredFeature, setHoveredFeature] = useState<number | null>(null);
 
   return (
-    <main>
+    <main className="flex-1">
       <section className="relative min-h-[calc(100vh-80px)] flex items-center justify-center px-6 py-12">
         <div className="absolute inset-0 bg-gradient-to-br from-primary-start/5 to-primary-end/5" />
         <div className="absolute inset-0" style={{ 
@@ -22,67 +23,83 @@ export function LandingPage({ onSearch, loading }: LandingPageProps) {
         
         <div className="max-w-7xl mx-auto relative">
           <div className="flex flex-col items-center text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              Unlock the Full Potential of Your
-              <span className="gradient-text ml-2">Academic Impact</span>
+            <div className="flex items-center space-x-2 mb-6">
+              <Sparkles className="h-6 w-6 text-[#E84E10]" />
+              <span className="text-sm font-medium text-gray-600">Discover Your Academic Impact</span>
+            </div>
+            
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
+              Transform Your Scholar Profile Into
+              <div className="gradient-text mt-2">Powerful Analytics</div>
             </h1>
+            
             <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-8">
-              Transform your Google Scholar profile into comprehensive analytics and insights.
+              Get instant insights into your research impact, collaboration network, and publication metrics with our advanced analytics platform.
             </p>
 
-            <div className="w-full max-w-2xl mb-12">
-              <SearchBar onSearch={onSearch} isLoading={loading} />
-              <button
-                onClick={() => setShowScholarSearch(true)}
-                className="mt-2 text-sm text-blue-600 hover:text-blue-700 flex items-center justify-center space-x-2 mx-auto"
-              >
-                <Search className="h-4 w-4" />
-                <span>Find your Google Scholar Link</span>
-              </button>
+            <div className="w-full max-w-2xl mb-12 relative group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-primary-start to-primary-end rounded-lg blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
+              <div className="relative">
+                <SearchBar onSearch={onSearch} isLoading={loading} />
+                <button
+                  onClick={() => setShowScholarSearch(true)}
+                  className="mt-3 text-sm text-gray-600 hover:text-[#E84E10] flex items-center justify-center space-x-2 mx-auto transition-colors group"
+                >
+                  <Search className="h-4 w-4 transition-transform group-hover:scale-110" />
+                  <span>Find your Google Scholar profile</span>
+                  <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transform translate-x-[-10px] group-hover:translate-x-0 transition-all" />
+                </button>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center px-4">
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-primary-start to-primary-end rounded-xl mb-3">
-                  <svg className="h-6 w-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-                  </svg>
+            <div id="metrics" className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[
+                {
+                  icon: Citation,
+                  title: "Citation Analytics",
+                  description: "Comprehensive impact metrics and citation analysis",
+                  features: ["h-index & g-index", "Citation growth trends", "Impact trajectory"],
+                  gradient: "from-blue-500 to-indigo-500"
+                },
+                {
+                  icon: Network,
+                  title: "Network Analysis",
+                  description: "Visualize your research collaborations",
+                  features: ["Co-authorship patterns", "Network visualization", "Collaboration trends"],
+                  gradient: "from-[#019DD4] to-[#E84E10]"
+                },
+                {
+                  icon: BookOpen,
+                  title: "Publication Insights",
+                  description: "Deep dive into your research output",
+                  features: ["Journal rankings", "Publication patterns", "Citation distribution"],
+                  gradient: "from-purple-500 to-pink-500"
+                }
+              ].map((feature, index) => (
+                <div
+                  key={index}
+                  className="relative group"
+                  onMouseEnter={() => setHoveredFeature(index)}
+                  onMouseLeave={() => setHoveredFeature(null)}
+                >
+                  <div className={`absolute -inset-0.5 bg-gradient-to-r ${feature.gradient} rounded-lg blur opacity-0 group-hover:opacity-25 transition duration-500`} />
+                  <div className="relative bg-white/80 backdrop-blur-sm rounded-lg p-6 border border-gray-100 hover:border-transparent transition-all duration-300">
+                    <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-primary-start to-primary-end rounded-xl mb-4 transform group-hover:scale-110 transition-transform duration-300">
+                      <feature.icon className="h-6 w-6 text-white" />
+                    </div>
+                    <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
+                    <p className="text-sm text-gray-600 mb-4">{feature.description}</p>
+                    <ul className="space-y-2">
+                      {feature.features.map((item, idx) => (
+                        <li key={idx} className="flex items-center text-sm text-gray-600 group-hover:text-gray-900 transition-colors">
+                          <CheckCircle className={`h-4 w-4 mr-2 ${hoveredFeature === index ? 'text-[#E84E10]' : 'text-gray-400'} transition-colors`} />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
-                <h3 className="text-base font-semibold mb-1">Citation Analysis</h3>
-                <p className="text-sm text-gray-600">
-                  Get deep insights with comprehensive metrics including h-index, g-index, and more.
-                </p>
-              </div>
-
-              <div className="text-center px-4">
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-primary-start to-primary-end rounded-xl mb-3">
-                  <svg className="h-6 w-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                  </svg>
-                </div>
-                <h3 className="text-base font-semibold mb-1">Collaboration Analysis</h3>
-                <p className="text-sm text-gray-600">
-                  Understand your research network with co-authorship patterns and collaboration metrics.
-                </p>
-              </div>
-
-              <div className="text-center px-4">
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-primary-start to-primary-end rounded-xl mb-3">
-                  <svg className="h-6 w-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M12 20V10" />
-                    <path d="M18 20V4" />
-                    <path d="M6 20v-4" />
-                  </svg>
-                </div>
-                <h3 className="text-base font-semibold mb-1">Research Impact</h3>
-                <p className="text-sm text-gray-600">
-                  Visualize your research impact with citation trends and publication analysis.
-                </p>
-              </div>
+              ))}
             </div>
           </div>
         </div>
@@ -96,31 +113,38 @@ export function LandingPage({ onSearch, loading }: LandingPageProps) {
         }} />
         
         <div className="max-w-7xl mx-auto relative">
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-primary-start/10 p-8 text-center">
-            <h2 className="text-2xl md:text-3xl font-bold mb-4">
-              Ready to Analyze Your
-              <span className="gradient-text ml-2">Research Impact?</span>
-            </h2>
-            <p className="text-base text-gray-600 mb-6 max-w-2xl mx-auto">
-              Get comprehensive insights into your academic influence with our advanced metrics analysis.
-            </p>
-            
-            <div className="max-w-2xl mx-auto">
-              <SearchBar onSearch={onSearch} isLoading={loading} />
-            </div>
+          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-primary-start/10 p-8 text-center group hover:border-transparent transition-all duration-300 relative">
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-primary-start to-primary-end rounded-2xl blur opacity-0 group-hover:opacity-25 transition duration-500" />
+            <div className="relative">
+              <div className="flex items-center justify-center space-x-2 mb-4">
+                <Zap className="h-6 w-6 text-[#E84E10]" />
+                <span className="text-sm font-medium text-gray-600">Ready to get started?</span>
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                Analyze Your
+                <span className="gradient-text ml-2">Research Impact</span>
+              </h2>
+              <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
+                Enter your Google Scholar profile URL below to get instant insights into your academic influence.
+              </p>
+              
+              <div className="max-w-2xl mx-auto">
+                <SearchBar onSearch={onSearch} isLoading={loading} />
+              </div>
 
-            <div className="mt-6 flex flex-wrap justify-center gap-4 text-sm text-gray-600">
-              <div className="flex items-center">
-                <CheckCircle className="h-4 w-4 text-primary-start mr-2" />
-                Instant Analysis
-              </div>
-              <div className="flex items-center">
-                <CheckCircle className="h-4 w-4 text-primary-start mr-2" />
-                Comprehensive Metrics
-              </div>
-              <div className="flex items-center">
-                <CheckCircle className="h-4 w-4 text-primary-start mr-2" />
-                Visual Insights
+              <div className="mt-8 flex flex-wrap justify-center gap-6">
+                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <CheckCircle className="h-4 w-4 text-[#019DD4]" />
+                  <span>Instant Analysis</span>
+                </div>
+                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <CheckCircle className="h-4 w-4 text-[#019DD4]" />
+                  <span>Visual Insights</span>
+                </div>
+                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <CheckCircle className="h-4 w-4 text-[#019DD4]" />
+                  <span>Free to Use</span>
+                </div>
               </div>
             </div>
           </div>
