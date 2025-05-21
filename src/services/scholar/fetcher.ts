@@ -1,12 +1,19 @@
 import { ApiError } from '../../utils/api';
 
 export class ScholarFetcher {
-  private readonly CORS_PROXY = 'https://corsproxy.io/?';
+  // Try multiple proxies in order. The second option works without URL encoding
+  // and acts as a simple fallback when the primary proxy fails.
+  private readonly PROXIES = [
+    'https://corsproxy.io/?', // requires encoded URL
+    'https://r.jina.ai/https://'
+  ];
   private readonly MAX_RETRIES = 3;
   private readonly DELAY_MS = 2000;
 
-  private async fetchWithProxy(url: string): Promise<Response> {
-    const proxyUrl = `${this.CORS_PROXY}${encodeURIComponent(url)}`;
+  private async fetchWithProxy(url: string, proxy: string): Promise<Response> {
+    const proxyUrl = proxy.endsWith('?')
+      ? `${proxy}${encodeURIComponent(url)}`
+      : `${proxy}${url}`;
     
     const response = await fetch(proxyUrl, {
       headers: {
@@ -29,8 +36,20 @@ export class ScholarFetcher {
     for (let attempt = 1; attempt <= this.MAX_RETRIES; attempt++) {
       try {
         console.log(`[ScholarFetcher] Attempt ${attempt}/${this.MAX_RETRIES}`);
-        
-        const response = await this.fetchWithProxy(url);
+
+        // Try all proxies sequentially for this attempt
+        let response: Response | null = null;
+        for (const proxy of this.PROXIES) {
+          try {
+            response = await this.fetchWithProxy(url, proxy);
+            break;
+          } catch (err) {
+            console.warn(`[ScholarFetcher] Proxy failed (${proxy}):`, err);
+            lastError = err instanceof Error ? err : new Error(String(err));
+          }
+        }
+        if (!response) throw lastError || new Error('No proxy succeeded');
+
         const text = await response.text();
 
         // Validate the response
@@ -67,6 +86,13 @@ export class ScholarFetcher {
           await new Promise(resolve => setTimeout(resolve, delay));
         }
       }
+    }
+
+    if (lastError) {
+      throw new ApiError(
+        lastError.message,
+        'NETWORK_ERROR'
+      );
     }
 
     throw new ApiError(
