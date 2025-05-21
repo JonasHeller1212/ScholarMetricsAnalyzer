@@ -1,63 +1,85 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Search, ExternalLink, Loader2, AlertCircle, BookOpen } from 'lucide-react';
+import { ApiError } from '../utils/api';
 
 interface SearchBarProps {
   onSearch: (url: string) => void;
   isLoading?: boolean;
   compact?: boolean;
+  error?: string | null;
 }
 
-export function SearchBar({ onSearch, isLoading = false, compact = false }: SearchBarProps) {
+export function SearchBar({ onSearch, isLoading = false, compact = false, error: externalError }: SearchBarProps) {
   const [url, setUrl] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [localError, setLocalError] = useState<string | null>(null);
+  
+  const error = externalError || localError;
 
-  const validateUrl = (url: string): boolean => {
-    const scholarUrlPattern = /^https:\/\/scholar\.google\.com\/citations\?(?:hl=\w+&)?user=[\w-]+/;
+  const validateUrl = useCallback((url: string): boolean => {
+    const scholarUrlPattern = /^https:\/\/scholar\.google\.[a-z.]+\/citations\?(?:.*&)?user=[\w-]+/;
     return scholarUrlPattern.test(url.trim());
-  };
+  }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedUrl = url.trim();
+    setLocalError(null);
     
     if (!trimmedUrl) {
-      setError('Please enter a Google Scholar profile URL');
+      setLocalError('Please enter a Google Scholar profile URL');
       return;
     }
 
+    // Clear any previous errors before validation
+    setLocalError(null);
+    
     if (!validateUrl(trimmedUrl)) {
-      setError('Invalid URL format. Please enter a valid Google Scholar profile URL');
+      setLocalError('Invalid URL format. Please enter a valid Google Scholar profile URL');
       return;
     }
 
-    // Normalize the URL format to ensure consistent handling
-    const urlObj = new URL(trimmedUrl);
-    const userId = urlObj.searchParams.get('user');
-    const normalizedUrl = `https://scholar.google.com/citations?user=${userId}`;
+    try {
+      const urlObj = new URL(trimmedUrl);
+      if (!urlObj.searchParams.has('user')) {
+        setLocalError('Invalid Google Scholar URL. Missing user ID parameter.');
+        return;
+      }
 
-    setError(null);
-    onSearch(normalizedUrl);
-  };
+      const userId = urlObj.searchParams.get('user');
+      const normalizedUrl = `https://scholar.google.com/citations?user=${userId}`;
 
-  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      onSearch(normalizedUrl);
+    } catch (err) {
+      setLocalError('Invalid URL format. Please check the URL and try again.');
+    }
+  }, [url, onSearch, validateUrl]);
+
+  const handleUrlChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setUrl(e.target.value);
-    setError(null);
-  };
+    setLocalError(null);
+  }, []);
 
-  const handleSampleLink = () => {
+  const handleSampleLink = useCallback(() => {
     const sampleUrl = 'https://scholar.google.com/citations?user=NOSPtp8AAAAJ&hl=en';
     setUrl(sampleUrl);
-    setError(null);
-  };
+    setLocalError(null);
+  }, []);
 
   return (
     <form onSubmit={handleSubmit} className="w-full">
       <div className="relative">
+        {error && (
+          <div className="absolute -top-6 left-0 right-0 text-xs text-red-600 flex items-center">
+            <AlertCircle className="h-3.5 w-3.5 mr-1" />
+            <span>{error}</span>
+          </div>
+        )}
         <input
-          type="text"
+          type="url"
           value={url}
           onChange={handleUrlChange}
           placeholder="Enter Google Scholar profile URL..."
+          disabled={isLoading}
           className={`w-full ${
             compact 
               ? 'py-1.5 pl-9 pr-16 text-xs' 
@@ -65,25 +87,31 @@ export function SearchBar({ onSearch, isLoading = false, compact = false }: Sear
           } text-gray-700 bg-white border ${
             error ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-gray-200 focus:border-primary-start focus:ring-primary-start/20'
           } rounded-lg focus:outline-none focus:ring-2 transition-all`}
-          disabled={isLoading}
+          autoComplete="off"
+          spellCheck="false"
         />
-        <ExternalLink className={`absolute ${
-          compact ? 'left-3 top-2 h-4 w-4' : 'left-4 top-3.5 h-5 w-5'
-        } ${error ? 'text-red-400' : 'gradient-icon'}`} />
+        <div className={`absolute ${
+          compact ? 'left-3 top-2' : 'left-4 top-3.5'
+        } flex items-center justify-center`}>
+          <ExternalLink className={`h-5 w-5 ${error ? 'text-red-400' : 'gradient-icon'}`} />
+        </div>
         <button
           type="submit"
           disabled={!url.trim() || isLoading}
-          className={`absolute ${
-            compact ? 'right-2 top-1 px-2 py-1' : 'right-2 top-2 px-3 py-1.5'
-          } bg-gradient-to-r from-primary-start to-primary-end text-white rounded-md hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 text-xs`}
+          className={`absolute flex items-center justify-center ${
+            compact ? 'right-2 top-1' : 'right-2 top-2'
+          } px-4 py-1.5 bg-gradient-to-r from-primary-start to-primary-end text-white rounded-lg hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed space-x-2 text-xs min-w-[80px]`}
         >
           {isLoading ? (
             <>
-              <Loader2 className="h-3 w-3 animate-spin" />
+              <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
               <span>Analyzing...</span>
             </>
           ) : (
-            <span>Analyze</span>
+            <>
+              <Search className="h-4 w-4" />
+              <span>Analyze</span>
+            </>
           )}
         </button>
       </div>

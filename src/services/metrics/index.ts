@@ -1,13 +1,13 @@
 import { calculateHIndex, calculateH5Index } from './citation/h-index';
 import { calculateGIndex } from './citation/g-index';
 import { calculateI10Index } from './citation/i10-index';
-import { calculateACC5, calculateAverageCitations } from './citation/impact-metrics';
+import { calculateAverageCitations } from './citation/impact-metrics';
 import { calculateCoAuthorMetrics } from './collaboration/co-author-metrics';
 import { calculateGrowthRates } from './trends/growth-metrics';
-import { calculateImpactTrend, findPeakYear } from './trends/trend-analysis';
+import { findPeakYear } from './trends/trend-analysis';
 import type { Publication, Metrics, TimeRange } from '../../types/scholar';
 
-export class MetricsCalculator {
+class MetricsCalculator {
   public calculateMetrics(
     publications: Publication[], 
     citationsPerYear: Record<string, number>, 
@@ -21,14 +21,12 @@ export class MetricsCalculator {
     const gIndex = calculateGIndex(citations);
     const i10Index = calculateI10Index(citations);
     const h5Index = calculateH5Index(publications);
-    const acc5 = calculateACC5(publications);
     
     // Calculate average citations for the selected time range
     const averages = calculateAverageCitations(publications, timeRange);
     
     // Calculate growth and trends for the selected time range
     const { yearlyGrowthRates, avgGrowthRate } = calculateGrowthRates(citationsPerYear, timeRange);
-    const impactTrend = calculateImpactTrend(citationsPerYear, timeRange);
     const peak = findPeakYear(citationsPerYear, timeRange);
     
     // Calculate collaboration metrics
@@ -60,12 +58,12 @@ export class MetricsCalculator {
       totalPublications: publications.length,
       publicationsPerYear: (publications.length / Math.max(1, Object.keys(citationsPerYear).length)).toFixed(1),
       citationsPerYear,
-      acc5,
+      acc5: calculateACC5(publications),
       avgCitationsPerYear: averages.perYear,
       avgCitationsPerPaper: averages.perPaper,
       citationGrowthRate: avgGrowthRate,
       yearlyGrowthRates,
-      impactTrend,
+      impactTrend: calculateImpactTrend(citationsPerYear, timeRange),
       peakCitationYear: peak.year,
       peakCitations: peak.citations,
       ...coAuthorStats,
@@ -75,3 +73,5 @@ export class MetricsCalculator {
     };
   }
 }
+
+export const metricsCalculator = new MetricsCalculator();

@@ -1,12 +1,51 @@
 import React, { useState } from 'react';
-import { ArrowUpDown, BookOpen, Presentation as Citation, Calendar } from 'lucide-react';
-import type { Publication } from '../types/scholar';
+import { ArrowUpDown, BookOpen, Presentation as Citation, Calendar, Award, Star, TrendingUp } from 'lucide-react';
+import type { Publication, JournalRanking } from '../types/scholar';
 
 interface PublicationsListProps {
   publications: Publication[];
 }
 
 type SortField = 'year' | 'citations' | 'title';
+
+function JournalRankingBadge({ ranking }: { ranking: JournalRanking }) {
+  console.log('[PublicationsList] Rendering badge for ranking:', ranking); // Debug log
+
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {ranking.ft50 && (
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-800">
+          <Award className="h-3 w-3 mr-0.5" />
+          FT50
+        </span>
+      )}
+      {ranking.abs && (
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-800">
+          <Star className="h-3 w-3 mr-0.5" />
+          ABS {ranking.abs}
+        </span>
+      )}
+      {ranking.sjr && (
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-800">
+          <TrendingUp className="h-3 w-3 mr-0.5" />
+          SJR {ranking.sjr}
+        </span>
+      )}
+      {ranking.abdc && (
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-100 text-purple-800">
+          <Star className="h-3 w-3 mr-0.5" />
+          ABDC {ranking.abdc}
+        </span>
+      )}
+      {ranking.jcr && (
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-100 text-indigo-800">
+          <TrendingUp className="h-3 w-3 mr-0.5" />
+          IF {ranking.jcr}
+        </span>
+      )}
+    </div>
+  );
+}
 
 export function PublicationsList({ publications }: PublicationsListProps) {
   const [sortField, setSortField] = useState<SortField>('citations');
@@ -27,6 +66,12 @@ export function PublicationsList({ publications }: PublicationsListProps) {
         return 0;
     }
   });
+
+  // Debug log to check publications data
+  console.log('[PublicationsList] Publications:', sortedPublications.map(p => ({
+    venue: p.venue,
+    ranking: p.journalRanking
+  })));
 
   if (!publications.length) {
     return (
@@ -97,7 +142,7 @@ export function PublicationsList({ publications }: PublicationsListProps) {
               <p className="text-xs text-gray-600 mb-2">
                 {pub.authors.join(', ')}
               </p>
-              <div className="flex items-center space-x-4 text-xs text-gray-500">
+              <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500">
                 <span className="flex items-center">
                   <Calendar className="h-3 w-3 mr-1" />
                   {pub.year}
@@ -110,6 +155,11 @@ export function PublicationsList({ publications }: PublicationsListProps) {
                   <span className="text-gray-400">{pub.venue}</span>
                 )}
               </div>
+              {pub.journalRanking && (
+                <div className="mt-2">
+                  <JournalRankingBadge ranking={pub.journalRanking} />
+                </div>
+              )}
             </a>
           </div>
         ))}

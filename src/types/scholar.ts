@@ -5,6 +5,14 @@ export interface Topic {
   paperCount: number;
 }
 
+export interface JournalRanking {
+  sjr?: 'Q1' | 'Q2' | 'Q3' | 'Q4';
+  jcr?: string; // Impact factor as string (e.g., "5.342")
+  ft50?: boolean;
+  abs?: '4*' | '4' | '3' | '2' | '1';
+  abdc?: 'A*' | 'A' | 'B' | 'C';
+}
+
 export interface Publication {
   title: string;
   authors: string[];
@@ -12,6 +20,7 @@ export interface Publication {
   year: number;
   citations: number;
   url: string;
+  journalRanking?: JournalRanking;
 }
 
 export interface Metrics {

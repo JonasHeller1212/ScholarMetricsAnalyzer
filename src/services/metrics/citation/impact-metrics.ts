@@ -32,3 +32,9 @@ export function calculateAverageCitations(
     perYear: Number((totalCitations / Math.max(1, yearCount)).toFixed(1))
   };
 }
+
+export function calculateACC5(publications: Publication[]): number {
+  const currentYear = new Date().getFullYear();
+  const recentPubs = publications.filter(pub => pub.year > currentYear - 5);
+  return recentPubs.reduce((sum, pub) => sum + pub.citations, 0);
+}

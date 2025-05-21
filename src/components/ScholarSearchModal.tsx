@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, X, Copy, Check, ExternalLink, Loader2 } from 'lucide-react';
+import { Search, X, ExternalLink, Loader2, Info } from 'lucide-react';
 
 interface ScholarSearchModalProps {
   isOpen: boolean;
@@ -9,8 +9,6 @@ interface ScholarSearchModalProps {
 export function ScholarSearchModal({ isOpen, onClose }: ScholarSearchModalProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState<Array<{ name: string; url: string; affiliation?: string }>>([]);
-  const [copied, setCopied] = useState<string | null>(null);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,25 +18,9 @@ export function ScholarSearchModal({ isOpen, onClose }: ScholarSearchModalProps)
     try {
       // Construct the Google Scholar search URL
       const searchUrl = `https://scholar.google.com/citations?view_op=search_authors&mauthors=${encodeURIComponent(searchQuery)}`;
-      
-      // Open in a new tab since we can't directly fetch due to CORS
       window.open(searchUrl, '_blank');
-      
-      // Note: In a real implementation, we would fetch and parse results
-      // but due to CORS restrictions, we'll direct users to Google Scholar
-      
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleCopy = async (url: string) => {
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(url);
-      setTimeout(() => setCopied(null), 2000);
-    } catch (err) {
-      console.error('Failed to copy:', err);
     }
   };
 
@@ -90,7 +72,7 @@ export function ScholarSearchModal({ isOpen, onClose }: ScholarSearchModalProps)
 
           <div className="bg-blue-50 rounded-xl p-4 text-sm text-blue-800">
             <h3 className="font-medium mb-2 flex items-center">
-              <ExternalLink className="h-4 w-4 mr-1" />
+              <Info className="h-4 w-4 mr-1" />
               How to find your Google Scholar profile URL:
             </h3>
             <ol className="list-decimal list-inside space-y-2 text-blue-700">

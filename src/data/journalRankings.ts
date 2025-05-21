@@ -1,177 +1,138 @@
-// ABS (Association of Business Schools), FT50, and SJR (Scimago Journal Rank) Rankings
-export const JOURNAL_RANKINGS: Record<string, { absRanking?: '4*' | '4' | '3' | '2' | '1', sjrRanking?: 'Q1' | 'Q2' | 'Q3' | 'Q4', ft50?: boolean }> = {
-  // FT50 & Top Marketing Journals
-  'journal of marketing': { absRanking: '4*', sjrRanking: 'Q1', ft50: true },
-  'journal of marketing research': { absRanking: '4*', sjrRanking: 'Q1', ft50: true },
-  'marketing science': { absRanking: '4*', sjrRanking: 'Q1', ft50: true },
-  'journal of consumer research': { absRanking: '4*', sjrRanking: 'Q1', ft50: true },
-  'journal of the academy of marketing science': { absRanking: '4', sjrRanking: 'Q1', ft50: true },
-  'journal of retailing': { absRanking: '4', sjrRanking: 'Q1' },
-  'journal of service research': { absRanking: '4', sjrRanking: 'Q1' },
-  'industrial marketing management': { absRanking: '3', sjrRanking: 'Q1' },
-  'journal of business research': { absRanking: '3', sjrRanking: 'Q1' },
-  'european journal of marketing': { absRanking: '3', sjrRanking: 'Q1' },
-  'psychology & marketing': { absRanking: '3', sjrRanking: 'Q1' },
-  'journal of advertising': { absRanking: '3', sjrRanking: 'Q1' },
-  'journal of advertising research': { absRanking: '3', sjrRanking: 'Q1' },
-  'marketing letters': { absRanking: '3', sjrRanking: 'Q1' },
-  'journal of interactive marketing': { absRanking: '3', sjrRanking: 'Q1' },
-  'journal of research in interactive marketing': { absRanking: '2', sjrRanking: 'Q1' },
-  'journal of marketing management': { absRanking: '3', sjrRanking: 'Q1' },
-  'marketing theory': { absRanking: '3', sjrRanking: 'Q1' },
-  
-  // FT50 Management & Strategy Journals
-  'academy of management journal': { absRanking: '4*', sjrRanking: 'Q1', ft50: true },
-  'academy of management review': { absRanking: '4*', sjrRanking: 'Q1', ft50: true },
-  'administrative science quarterly': { absRanking: '4*', sjrRanking: 'Q1', ft50: true },
-  'journal of management': { absRanking: '4*', sjrRanking: 'Q1', ft50: true },
-  'journal of management studies': { absRanking: '4', sjrRanking: 'Q1', ft50: true },
-  'strategic management journal': { absRanking: '4*', sjrRanking: 'Q1', ft50: true },
-  'organization science': { absRanking: '4', sjrRanking: 'Q1', ft50: true },
-  'organization studies': { absRanking: '4', sjrRanking: 'Q1', ft50: true },
-  'organizational behavior and human decision processes': { absRanking: '4', sjrRanking: 'Q1', ft50: true },
-  
-  // FT50 Information Systems Journals
-  'mis quarterly': { absRanking: '4*', sjrRanking: 'Q1', ft50: true },
-  'information systems research': { absRanking: '4*', sjrRanking: 'Q1', ft50: true },
-  'journal of management information systems': { absRanking: '4', sjrRanking: 'Q1' },
-  'information & management': { absRanking: '3', sjrRanking: 'Q1' },
-  'computers in human behavior': { absRanking: '3', sjrRanking: 'Q1' },
-  'decision support systems': { absRanking: '3', sjrRanking: 'Q1' },
-  'european journal of information systems': { absRanking: '3', sjrRanking: 'Q1' },
-  'information systems journal': { absRanking: '3', sjrRanking: 'Q1' },
-  'journal of information technology': { absRanking: '3', sjrRanking: 'Q1' },
-  'journal of strategic information systems': { absRanking: '3', sjrRanking: 'Q1' },
-  'information systems frontiers': { absRanking: '3', sjrRanking: 'Q1' },
-  
-  // FT50 Operations & Technology Management
-  'journal of operations management': { absRanking: '4*', sjrRanking: 'Q1', ft50: true },
-  'manufacturing and service operations management': { absRanking: '4', sjrRanking: 'Q1', ft50: true },
-  'production and operations management': { absRanking: '4', sjrRanking: 'Q1', ft50: true },
-  'operations research': { absRanking: '4*', sjrRanking: 'Q1', ft50: true },
-  'management science': { absRanking: '4*', sjrRanking: 'Q1', ft50: true },
-  
-  // FT50 Finance & Economics
-  'journal of finance': { absRanking: '4*', sjrRanking: 'Q1', ft50: true },
-  'journal of financial economics': { absRanking: '4*', sjrRanking: 'Q1', ft50: true },
-  'review of financial studies': { absRanking: '4*', sjrRanking: 'Q1', ft50: true },
-  'journal of political economy': { absRanking: '4*', sjrRanking: 'Q1', ft50: true },
-  'american economic review': { absRanking: '4*', sjrRanking: 'Q1', ft50: true },
-  'econometrica': { absRanking: '4*', sjrRanking: 'Q1', ft50: true },
-  'review of economic studies': { absRanking: '4*', sjrRanking: 'Q1', ft50: true },
-  'quarterly journal of economics': { absRanking: '4*', sjrRanking: 'Q1', ft50: true },
-  
-  // FT50 Accounting
-  'accounting review': { absRanking: '4*', sjrRanking: 'Q1', ft50: true },
-  'accounting organizations and society': { absRanking: '4*', sjrRanking: 'Q1', ft50: true },
-  'contemporary accounting research': { absRanking: '4', sjrRanking: 'Q1', ft50: true },
-  'journal of accounting research': { absRanking: '4*', sjrRanking: 'Q1', ft50: true },
-  'journal of accounting and economics': { absRanking: '4*', sjrRanking: 'Q1', ft50: true },
-  'review of accounting studies': { absRanking: '4', sjrRanking: 'Q1', ft50: true },
-  
-  // FT50 International Business
-  'journal of international business studies': { absRanking: '4*', sjrRanking: 'Q1', ft50: true },
-  'journal of world business': { absRanking: '4', sjrRanking: 'Q1', ft50: true },
-  
-  // Other Notable Business Journals
-  'journal of business ethics': { absRanking: '3', sjrRanking: 'Q1', ft50: true },
-  'business strategy and the environment': { absRanking: '3', sjrRanking: 'Q1' },
-  'journal of business & industrial marketing': { absRanking: '2', sjrRanking: 'Q1' },
-  'harvard business review': { absRanking: '3', sjrRanking: 'Q1', ft50: true },
-  'mit sloan management review': { absRanking: '3', sjrRanking: 'Q1', ft50: true },
-  'california management review': { absRanking: '3', sjrRanking: 'Q1', ft50: true }
+// Journal rankings data with extended information
+export const JOURNAL_RANKINGS: Record<string, {
+  sjr?: 'Q1' | 'Q2' | 'Q3' | 'Q4';
+  jcr?: string;
+  ft50?: boolean;
+  abs?: '4*' | '4' | '3' | '2' | '1';
+  abdc?: 'A*' | 'A' | 'B' | 'C';
+}> = {
+  // FT50 Journals (Complete list)
+  'academy of management journal': { sjr: 'Q1', jcr: '10.192', ft50: true, abs: '4*', abdc: 'A*' },
+  'academy of management review': { sjr: 'Q1', jcr: '11.784', ft50: true, abs: '4*', abdc: 'A*' },
+  'accounting organizations and society': { sjr: 'Q1', jcr: '3.947', ft50: true, abs: '4*', abdc: 'A*' },
+  'administrative science quarterly': { sjr: 'Q1', jcr: '8.024', ft50: true, abs: '4*', abdc: 'A*' },
+  'american economic review': { sjr: 'Q1', jcr: '7.145', ft50: true, abs: '4*', abdc: 'A*' },
+  'contemporary accounting research': { sjr: 'Q1', jcr: '3.239', ft50: true, abs: '4', abdc: 'A*' },
+  'econometrica': { sjr: 'Q1', jcr: '8.529', ft50: true, abs: '4*', abdc: 'A*' },
+  'entrepreneurship theory and practice': { sjr: 'Q1', jcr: '10.075', ft50: true, abs: '4', abdc: 'A*' },
+  'harvard business review': { sjr: 'Q1', jcr: '7.820', ft50: true, abs: '3', abdc: 'A' },
+  'human relations': { sjr: 'Q1', jcr: '5.236', ft50: true, abs: '4', abdc: 'A*' },
+  'human resource management': { sjr: 'Q1', jcr: '5.078', ft50: true, abs: '4', abdc: 'A*' },
+  'information systems research': { sjr: 'Q1', jcr: '4.802', ft50: true, abs: '4*', abdc: 'A*' },
+  'journal of accounting and economics': { sjr: 'Q1', jcr: '4.936', ft50: true, abs: '4*', abdc: 'A*' },
+  'journal of accounting research': { sjr: 'Q1', jcr: '5.333', ft50: true, abs: '4*', abdc: 'A*' },
+  'journal of applied psychology': { sjr: 'Q1', jcr: '7.429', ft50: true, abs: '4*', abdc: 'A*' },
+  'journal of business ethics': { sjr: 'Q1', jcr: '6.973', ft50: true, abs: '3', abdc: 'A' },
+  'journal of business venturing': { sjr: 'Q1', jcr: '10.214', ft50: true, abs: '4', abdc: 'A*' },
+  'journal of consumer psychology': { sjr: 'Q1', jcr: '4.427', ft50: true, abs: '4', abdc: 'A*' },
+  'journal of consumer research': { sjr: 'Q1', jcr: '5.000', ft50: true, abs: '4*', abdc: 'A*' },
+  'journal of finance': { sjr: 'Q1', jcr: '8.902', ft50: true, abs: '4*', abdc: 'A*' },
+  'journal of financial and quantitative analysis': { sjr: 'Q1', jcr: '4.147', ft50: true, abs: '4', abdc: 'A*' },
+  'journal of financial economics': { sjr: 'Q1', jcr: '8.018', ft50: true, abs: '4*', abdc: 'A*' },
+  'journal of international business studies': { sjr: 'Q1', jcr: '9.158', ft50: true, abs: '4*', abdc: 'A*' },
+  'journal of management': { sjr: 'Q1', jcr: '11.791', ft50: true, abs: '4*', abdc: 'A*' },
+  'journal of management information systems': { sjr: 'Q1', jcr: '5.676', ft50: true, abs: '4', abdc: 'A*' },
+  'journal of management studies': { sjr: 'Q1', jcr: '7.134', ft50: true, abs: '4', abdc: 'A*' },
+  'journal of marketing': { sjr: 'Q1', jcr: '12.367', ft50: true, abs: '4*', abdc: 'A*' },
+  'journal of marketing research': { sjr: 'Q1', jcr: '5.921', ft50: true, abs: '4*', abdc: 'A*' },
+  'journal of operations management': { sjr: 'Q1', jcr: '8.892', ft50: true, abs: '4*', abdc: 'A*' },
+  'journal of political economy': { sjr: 'Q1', jcr: '8.302', ft50: true, abs: '4*', abdc: 'A*' },
+  'journal of the academy of marketing science': { sjr: 'Q1', jcr: '11.421', ft50: true, abs: '4', abdc: 'A*' },
+  'management science': { sjr: 'Q1', jcr: '4.883', ft50: true, abs: '4*', abdc: 'A*' },
+  'manufacturing and service operations management': { sjr: 'Q1', jcr: '3.568', ft50: true, abs: '4', abdc: 'A*' },
+  'marketing science': { sjr: 'Q1', jcr: '3.605', ft50: true, abs: '4*', abdc: 'A*' },
+  'mis quarterly': { sjr: 'Q1', jcr: '5.921', ft50: true, abs: '4*', abdc: 'A*' },
+  'operations research': { sjr: 'Q1', jcr: '3.494', ft50: true, abs: '4*', abdc: 'A*' },
+  'organization science': { sjr: 'Q1', jcr: '4.683', ft50: true, abs: '4', abdc: 'A*' },
+  'organization studies': { sjr: 'Q1', jcr: '5.712', ft50: true, abs: '4', abdc: 'A*' },
+  'organizational behavior and human decision processes': { sjr: 'Q1', jcr: '4.853', ft50: true, abs: '4', abdc: 'A*' },
+  'production and operations management': { sjr: 'Q1', jcr: '4.965', ft50: true, abs: '4', abdc: 'A*' },
+  'quarterly journal of economics': { sjr: 'Q1', jcr: '11.375', ft50: true, abs: '4*', abdc: 'A*' },
+  'research policy': { sjr: 'Q1', jcr: '8.995', ft50: true, abs: '4', abdc: 'A*' },
+  'review of accounting studies': { sjr: 'Q1', jcr: '3.682', ft50: true, abs: '4', abdc: 'A*' },
+  'review of economic studies': { sjr: 'Q1', jcr: '6.673', ft50: true, abs: '4*', abdc: 'A*' },
+  'review of finance': { sjr: 'Q1', jcr: '3.494', ft50: true, abs: '4', abdc: 'A*' },
+  'review of financial studies': { sjr: 'Q1', jcr: '7.256', ft50: true, abs: '4*', abdc: 'A*' },
+  'sloan management review': { sjr: 'Q1', jcr: '7.548', ft50: true, abs: '3', abdc: 'A' },
+  'strategic entrepreneurship journal': { sjr: 'Q1', jcr: '6.200', ft50: true, abs: '4', abdc: 'A*' },
+  'strategic management journal': { sjr: 'Q1', jcr: '7.841', ft50: true, abs: '4*', abdc: 'A*' },
+  'the accounting review': { sjr: 'Q1', jcr: '4.562', ft50: true, abs: '4*', abdc: 'A*' },
+
+  // Non-FT50 Journals
+  'proceedings of the national academy of sciences': { sjr: 'Q1', jcr: '11.205', abs: '4*', abdc: 'A*' },
+  'nature': { sjr: 'Q1', jcr: '49.962', abs: '4*', abdc: 'A*' },
+  'science': { sjr: 'Q1', jcr: '41.845', abs: '4*', abdc: 'A*' },
+  'psychological science': { sjr: 'Q1', jcr: '6.585', abs: '4', abdc: 'A*' },
+  'journal of experimental psychology': { sjr: 'Q1', jcr: '4.670', abs: '4', abdc: 'A*' },
+  'psychological review': { sjr: 'Q1', jcr: '8.216', abs: '4*', abdc: 'A*' },
+  'psychology and marketing': { sjr: 'Q1', jcr: '2.939', abs: '3', abdc: 'A' },
+  'journal of business research': { sjr: 'Q1', jcr: '7.550', abs: '3', abdc: 'A' },
+  'journal of retailing': { sjr: 'Q1', jcr: '7.590', abs: '4', abdc: 'A*' },
+  'journal of service research': { sjr: 'Q1', jcr: '6.842', abs: '4', abdc: 'A*' },
+  'journal of interactive marketing': { sjr: 'Q1', jcr: '4.719', abs: '3', abdc: 'A' },
+  'journal of research in interactive marketing': { sjr: 'Q1', jcr: '3.417', abs: '2', abdc: 'A' },
+  'journal of advertising': { sjr: 'Q1', jcr: '5.566', abs: '3', abdc: 'A*' },
+  'computers in human behavior': { sjr: 'Q1', jcr: '7.959', abs: '3', abdc: 'A' },
+  'international journal of physical distribution and logistics management': { sjr: 'Q1', jcr: '9.592', abs: '2', abdc: 'A' },
+  'journal of wine research': { sjr: 'Q2', jcr: '1.426', abs: '2', abdc: 'B' },
+  'international journal of information management': { sjr: 'Q1', jcr: '14.098', abs: '2', abdc: 'A' },
+  'journal of service management': { sjr: 'Q1', jcr: '8.897', abs: '2', abdc: 'A' },
+  'business horizons': { sjr: 'Q1', jcr: '7.430', abs: '2', abdc: 'B' },
+  'journal of social marketing': { sjr: 'Q2', jcr: '3.207', abs: '2', abdc: 'B' },
+  'australasian marketing journal': { sjr: 'Q2', jcr: '2.104', abs: '2', abdc: 'B' },
+  'journal of retailing and consumer services': { sjr: 'Q1', jcr: '7.135', abs: '2', abdc: 'A' },
+  'frontiers in sports and active living': { sjr: 'Q2', jcr: '2.231', abdc: 'C' },
+  'advances in consumer research': { sjr: 'Q2', abs: '2', abdc: 'B' }
 };
 
 // Helper function to find matching journal with improved matching logic
-export function findJournalRanking(venue: string): { absRanking?: '4*' | '4' | '3' | '2' | '1', sjrRanking?: 'Q1' | 'Q2' | 'Q3' | 'Q4', ft50?: boolean } | undefined {
+export function findJournalRanking(venue: string) {
   if (!venue) return undefined;
   
-  // Normalize the venue string
-  const normalizedVenue = venue.toLowerCase()
+  // Extract the base journal name by removing volume, issue, pages, and year
+  const baseVenue = venue.toLowerCase()
+    .replace(/,.*$/, '') // Remove everything after first comma
+    .replace(/\s+\d+.*$/, '') // Remove volume/issue numbers and everything after
+    .replace(/\([^)]*\)/g, '') // Remove parenthetical content
+    .replace(/proceedings.*$/i, '') // Remove proceedings text
+    .replace(/conference.*$/i, '') // Remove conference text
     .trim()
-    .replace(/\s+/g, ' ')           // Normalize spaces
-    .replace(/[.,;:\-()]/g, '')     // Remove punctuation
-    .replace(/&/g, 'and')           // Replace & with 'and'
-    .replace(/^the\s+/, '')         // Remove leading 'the'
-    .replace(/\s*\(.*?\)\s*/g, ''); // Remove parenthetical text
-
-  // Common abbreviations and their full forms
-  const abbreviations: Record<string, string> = {
-    'j ': 'journal ',
-    'jnl ': 'journal ',
-    'int ': 'international ',
-    'intl ': 'international ',
-    'mgmt ': 'management ',
-    'mgt ': 'management ',
-    'mkt ': 'marketing ',
-    'mrkt ': 'marketing ',
-    'res ': 'research ',
-    'rev ': 'review ',
-    'sci ': 'science ',
-    'tech ': 'technology ',
-    'technol ': 'technology ',
-    'bus ': 'business ',
-    'econ ': 'economics ',
-    'eng ': 'engineering ',
-    'sys ': 'systems ',
-    'proc ': 'proceedings ',
-    'trans ': 'transactions ',
-    'inf ': 'information ',
-    'info ': 'information ',
-    'comp ': 'computer ',
-    'comput ': 'computer ',
-    'behav ': 'behavior ',
-    'behaviour ': 'behavior ',
-    'eur ': 'european ',
-    'edu ': 'education ',
-    'educ ': 'education ',
-    'psych ': 'psychology ',
-    'psychol ': 'psychology ',
-    'hum ': 'human ',
-    'org ': 'organization ',
-    'org ': 'organizational ',
-    'acct ': 'accounting ',
-    'acc ': 'accounting ',
-    'fin ': 'finance ',
-    'financ ': 'financial ',
-    'ops ': 'operations ',
-    'oper ': 'operations ',
-    'prod ': 'production ',
-    'serv ': 'service ',
-    'mfg ': 'manufacturing ',
-    'strat ': 'strategic ',
-    'dec ': 'decision ',
-  };
-
-  // Expand abbreviations in the venue name
-  let expandedVenue = normalizedVenue;
-  Object.entries(abbreviations).forEach(([abbr, full]) => {
-    expandedVenue = expandedVenue.replace(new RegExp(abbr, 'g'), full);
-  });
+    .replace(/\s+/g, ' ') // Normalize spaces
+    .replace(/[.,;:\-]/g, '') // Remove punctuation
+    .replace(/&/g, 'and')
+    .replace(/^the\s+/, '');
 
   // Try exact match first
-  for (const [journal, ranking] of Object.entries(JOURNAL_RANKINGS)) {
-    const normalizedJournal = journal.toLowerCase()
-      .trim()
-      .replace(/[.,;:\-()]/g, '')
-      .replace(/&/g, 'and')
-      .replace(/^the\s+/, '');
-
-    if (expandedVenue === normalizedJournal || normalizedVenue === normalizedJournal) {
-      return ranking;
-    }
+  if (JOURNAL_RANKINGS[baseVenue]) {
+    return JOURNAL_RANKINGS[baseVenue];
   }
 
-  // Try partial matches if exact match fails
+  // Try partial matches with more lenient matching
   for (const [journal, ranking] of Object.entries(JOURNAL_RANKINGS)) {
-    const normalizedJournal = journal.toLowerCase()
-      .trim()
-      .replace(/[.,;:\-()]/g, '')
-      .replace(/&/g, 'and')
-      .replace(/^the\s+/, '');
-
+    const normalizedJournal = journal.toLowerCase();
+    
     // Check if the normalized venue contains the journal name or vice versa
-    if (expandedVenue.includes(normalizedJournal) || normalizedJournal.includes(expandedVenue)) {
+    // But ensure it's a substantial match (at least 80% of the shorter string)
+    const shortestLength = Math.min(baseVenue.length, normalizedJournal.length);
+    const matchThreshold = Math.floor(shortestLength * 0.8);
+    
+    let isMatch = false;
+    
+    // Check if one string contains most of the other
+    if (baseVenue.includes(normalizedJournal) || normalizedJournal.includes(baseVenue)) {
+      const commonChars = baseVenue.split('').filter(char => normalizedJournal.includes(char)).length;
+      isMatch = commonChars >= matchThreshold;
+    }
+    
+    // Also check for word-by-word matching
+    if (!isMatch) {
+      const venueWords = baseVenue.split(' ');
+      const journalWords = normalizedJournal.split(' ');
+      const commonWords = venueWords.filter(word => journalWords.includes(word));
+      isMatch = commonWords.length >= Math.min(venueWords.length, journalWords.length) * 0.8;
+    }
+    
+    if (isMatch) {
       return ranking;
     }
   }

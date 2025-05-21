@@ -15,7 +15,7 @@ A powerful web application for analyzing and visualizing Google Scholar profiles
 
 ## Live Demo
 
-Visit [Scholar Metrics Analyzer](https://scholarmetricsanalyzer.netlify.app) to try it out!
+Visit [Scholar Metrics Analyzer](https://scholarmetricsanalzyer.netlify.app) to try it out!
 
 ## Development
 

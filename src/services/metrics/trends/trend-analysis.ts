@@ -1,5 +1,57 @@
 import type { TimeRange } from '../../../types/scholar';
 
+export function calculateImpactTrend(
+  citationsPerYear: Record<string, number>,
+  timeRange: TimeRange = 'all'
+): 'increasing' | 'stable' | 'decreasing' {
+  const currentYear = new Date().getFullYear();
+  
+  // Filter years based on time range
+  const years = Object.keys(citationsPerYear)
+    .map(Number)
+    .filter(year => {
+      switch (timeRange) {
+        case '5y':
+          return year > currentYear - 5;
+        case '10y':
+          return year > currentYear - 10;
+        default:
+          return true;
+      }
+    })
+    .sort((a, b) => a - b);
+
+  if (years.length < 2) {
+    return 'stable';
+  }
+
+  // Calculate the trend using linear regression
+  const n = years.length;
+  let sumX = 0;
+  let sumY = 0;
+  let sumXY = 0;
+  let sumXX = 0;
+
+  years.forEach(year => {
+    const citations = citationsPerYear[year] || 0;
+    sumX += year;
+    sumY += citations;
+    sumXY += year * citations;
+    sumXX += year * year;
+  });
+
+  const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+  
+  // Determine trend based on slope
+  if (slope > 5) {
+    return 'increasing';
+  } else if (slope < -5) {
+    return 'decreasing';
+  } else {
+    return 'stable';
+  }
+}
+
 export function findPeakYear(
   citationsPerYear: Record<string, number>,
   timeRange: TimeRange = 'all'
@@ -32,50 +84,4 @@ export function findPeakYear(
     year: peakYear,
     citations: citationsPerYear[peakYear] || 0
   };
-}
-
-export function calculateImpactTrend(
-  citationsPerYear: Record<string, number>,
-  timeRange: TimeRange = 'all'
-): number {
-  const currentYear = new Date().getFullYear();
-
-  const years = Object.keys(citationsPerYear)
-    .map(Number)
-    .filter(year => {
-      switch (timeRange) {
-        case '5y':
-          return year > currentYear - 5;
-        case '10y':
-          return year > currentYear - 10;
-        default:
-          return true;
-      }
-    })
-    .sort((a, b) => a - b);
-
-  if (years.length < 2) {
-    return 0;
-  }
-
-  const n = years.length;
-  let sumX = 0;
-  let sumY = 0;
-  let sumXY = 0;
-  let sumX2 = 0;
-
-  for (const year of years) {
-    const x = year;
-    const y = citationsPerYear[year] || 0;
-    sumX += x;
-    sumY += y;
-    sumXY += x * y;
-    sumX2 += x * x;
-  }
-
-  const numerator = n * sumXY - sumX * sumY;
-  const denominator = n * sumX2 - sumX * sumX;
-  const slope = denominator !== 0 ? numerator / denominator : 0;
-
-  return Number(slope.toFixed(2));
 }

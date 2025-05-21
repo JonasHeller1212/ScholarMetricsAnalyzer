@@ -24,9 +24,9 @@ export const metricInfo = {
     link: "https://en.wikipedia.org/wiki/Citation_impact#Citation_patterns"
   },
   trend: {
-    description: "Citation trend analysis based on the last three complete years of data, calculated using a sophisticated algorithm that considers both absolute changes and relative growth rates.\n\nExample calculations:\n\nIncreasing trend:\nYear 1 (2021): 100 citations\nYear 2 (2022): 120 citations (+20%)\nYear 3 (2023): 150 citations (+25%)\nResult: 'Increasing' (avg. growth >5%)\n\nDecreasing trend:\nYear 1 (2021): 200 citations\nYear 2 (2022): 180 citations (-10%)\nYear 3 (2023): 170 citations (-5.6%)\nResult: 'Decreasing' (consistent decline)\n\nStable trend:\nYear 1 (2021): 150 citations\nYear 2 (2022): 155 citations (+3.3%)\nYear 3 (2023): 152 citations (-1.9%)\nResult: 'Stable' (changes within ±5%)",
-    pros: "• Provides nuanced insight into recent research momentum\n• Uses multiple years to reduce noise and identify genuine trends\n• Considers both absolute and relative changes\n• Excludes current incomplete year to avoid bias\n• Helps identify emerging research leaders and sustained impact",
-    cons: "• May not reflect very recent publications still accumulating citations\n• Field-specific citation patterns can affect interpretation\n• Three-year window might miss longer-term patterns\n• Doesn't account for publication volume changes",
+    description: "Citation trend analysis based on the last three complete years of data, calculated using a sophisticated algorithm that considers both absolute changes and relative growth rates.",
+    pros: "Provides nuanced insight into recent research momentum and helps identify emerging research leaders.",
+    cons: "May not reflect very recent publications still accumulating citations and field-specific patterns.",
     link: "https://en.wikipedia.org/wiki/Citation_impact#Citation_trends"
   },
   citationsPerYear: {
@@ -41,26 +41,35 @@ export const metricInfo = {
     cons: "May undervalue seminal older works and disadvantage researchers with longer career histories.",
     link: "https://en.wikipedia.org/wiki/Citation_impact#Time_windows"
   },
+  network: {
+    description: "Total number of unique co-authors across all publications",
+    pros: "Demonstrates breadth of research network and collaborative reach within the field.",
+    cons: "May include one-time collaborations and doesn't indicate collaboration frequency or depth.",
+    link: "https://en.wikipedia.org/wiki/Scientific_collaboration#Network_analysis"
+  },
   collaborationScore: {
     description: "Percentage of publications with multiple authors",
-    pros: "Effectively measures research team integration and collaborative research tendency across publications.",
+    pros: "Effectively measures research team integration and collaborative research tendency.",
     cons: "Doesn't reflect individual contribution levels or the quality of collaborations.",
     link: "https://en.wikipedia.org/wiki/Scientific_collaboration"
   },
   coAuthors: {
-    description: "Total number of unique co-authors across all publications",
-    pros: "Demonstrates the breadth of research network and collaborative reach within the field.",
-    cons: "May include one-time collaborations and doesn't indicate collaboration frequency or depth.",
+    description: "Total number of unique researchers who have co-authored publications",
+    pros: "Shows the size and diversity of research collaborations and academic network.",
+    cons: "Doesn't distinguish between frequent collaborators and one-time co-authors.",
+    link: "https://en.wikipedia.org/wiki/Co-author"
   },
   topCoAuthor: {
     description: "Most frequent co-author based on number of shared publications",
     pros: "Identifies strongest research collaborations and key research partnerships.",
     cons: "Doesn't reflect the impact or quality of the collaborative work.",
+    link: "https://en.wikipedia.org/wiki/Scientific_collaboration#Collaboration_patterns"
   },
   soloAuthor: {
     description: "Percentage of publications where the researcher is the sole author",
     pros: "Clearly demonstrates independent research capability and individual scholarly contributions.",
     cons: "May suggest limited collaboration in fields where team science is increasingly important.",
+    link: "https://en.wikipedia.org/wiki/Scientific_collaboration#Solo_research"
   },
   averageAuthors: {
     description: "Mean number of authors per publication across all works",
