@@ -2,14 +2,14 @@ import React, { useState, useCallback } from 'react';
 import { GraduationCap, Linkedin, Github, AlertCircle } from 'lucide-react';
 import { SearchBar } from './components/SearchBar';
 import { LandingPage } from './components/LandingPage';
+import { ApiError } from './utils/api';
 import { ErrorModal } from './components/ErrorModal';
 import { ProfileView } from './components/ProfileView';
 import { PrivacyModal } from './components/PrivacyModal';
 import { TermsModal } from './components/TermsModal';
-import { scholarService } from './services/scholar';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import type { Author } from './types/scholar';
-import packageJson from '../package.json';
+import { scholarService } from './services/scholar';
 
 const SOCIAL_LINKS = {
   linkedin: 'https://www.linkedin.com/in/hellerjonas/',
@@ -38,26 +38,44 @@ function App() {
       setError(null);
       setData(null);
 
-      const { isValid } = scholarService.validateProfileUrl(url);
+      console.log('[App] Validating profile URL:', url);
+      const { isValid, userId } = scholarService.validateProfileUrl(url);
       if (!isValid) {
         console.error('[App] Invalid URL format');
-        throw new Error('Invalid Google Scholar URL format. Please enter a valid profile URL.');
+        setError('Invalid Google Scholar URL format. Please enter a valid profile URL.');
+        setShowError(true);
+        return; // Return early instead of throwing an error
       }
 
       console.log('[App] Starting profile fetch...');
       const profileData = await scholarService.fetchProfile(url);
       if (!profileData) {
         console.error('[App] No profile data returned');
-        throw new Error('Failed to fetch profile data. Please try again.');
+        setError('Failed to fetch profile data. Please try again.');
+        setShowError(true);
+        return; // Return early instead of throwing an error
       }
 
+      // Ensure metrics exists with default values even if undefined
+      const sanitizedData = {
+        ...profileData,
+        metrics: profileData.metrics ?? { citationsPerYear: {} }
+      };
+
       console.log('[App] Successfully fetched profile data');
-      setData(profileData);
+      setData(sanitizedData);
     } catch (err) {
       console.error('[App] Error fetching scholar profile:', err);
-      const errorMessage = err instanceof Error 
-        ? err.message 
-        : 'An unexpected error occurred';
+      let errorMessage: string;
+      
+      if (err instanceof ApiError) {
+        errorMessage = err.message;
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      } else {
+        errorMessage = 'An unexpected error occurred';
+      }
+      
       setShowError(true);
       setError(errorMessage);
       setData(null);

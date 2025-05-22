@@ -75,6 +75,10 @@ export function findPeakYear(
       }
     });
 
+  if (years.length === 0) {
+    return { year: 0, citations: 0 };
+  }
+
   const peakYear = years.reduce((max, year) => 
     (citationsPerYear[year] > (citationsPerYear[max] || 0)) ? year : max, 
     years[0]

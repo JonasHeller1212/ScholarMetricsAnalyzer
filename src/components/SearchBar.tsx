@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { Search, ExternalLink, Loader2, AlertCircle, BookOpen } from 'lucide-react';
 import { ApiError } from '../utils/api';
+import DOMPurify from 'dompurify';
 
 interface SearchBarProps {
   onSearch: (url: string) => void;
@@ -16,8 +17,25 @@ export function SearchBar({ onSearch, isLoading = false, compact = false, error:
   const error = externalError || localError;
 
   const validateUrl = useCallback((url: string): boolean => {
-    const scholarUrlPattern = /^https:\/\/scholar\.google\.[a-z.]+\/citations\?(?:.*&)?user=[\w-]+/;
-    return scholarUrlPattern.test(url.trim());
+    try {
+      // Parse URL to validate format
+      const urlObj = new URL(url.trim());
+      
+      // Check if it's a Google Scholar URL (any country domain)
+      const isGoogleScholar = urlObj.hostname.includes('scholar.google.');
+      
+      // Check if it has a user parameter
+      const hasUserParam = urlObj.searchParams.has('user');
+      
+      // Check if the user parameter has a valid format
+      const userId = urlObj.searchParams.get('user');
+      const validUserIdFormat = userId && userId.length >= 12;
+      
+      return isGoogleScholar && hasUserParam && validUserIdFormat;
+    } catch (e) {
+      // If URL parsing fails, it's not a valid URL
+      return false;
+    }
   }, []);
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
@@ -39,14 +57,20 @@ export function SearchBar({ onSearch, isLoading = false, compact = false, error:
     }
 
     try {
-      const urlObj = new URL(trimmedUrl);
-      if (!urlObj.searchParams.has('user')) {
+      // Sanitize URL before processing
+      const sanitizedUrl = DOMPurify.sanitize(trimmedUrl);
+      
+      // Normalize the URL
+      const urlObj = new URL(sanitizedUrl);
+      const userId = urlObj.searchParams.get('user');
+      
+      if (!userId) {
         setLocalError('Invalid Google Scholar URL. Missing user ID parameter.');
         return;
       }
 
-      const userId = urlObj.searchParams.get('user');
-      const normalizedUrl = `https://scholar.google.com/citations?user=${userId}`;
+      // Create a clean normalized URL with just the user parameter
+      const normalizedUrl = `https://scholar.google.com/citations?user=${encodeURIComponent(userId)}`;
 
       onSearch(normalizedUrl);
     } catch (err) {

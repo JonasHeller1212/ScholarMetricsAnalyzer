@@ -3,6 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Rectangle, C
 import { Info, TrendingUp, Calendar, Presentation as Citation, Clock } from 'lucide-react';
 import { calculateGrowthRates } from '../services/metrics/trends/growth-metrics';
 import { calculateAverageCitations } from '../services/metrics/citation/impact-metrics';
+import { calculateACC5 } from '../services/metrics/citation/impact-metrics';
 import { findPeakYear } from '../services/metrics/trends/trend-analysis';
 import type { TimeRange } from '../types/scholar';
 
