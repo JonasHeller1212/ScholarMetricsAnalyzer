@@ -83,10 +83,28 @@ export function ScholarSearchModal({ isOpen, onClose, onSelect, initialQuery = '
   // Try Google Scholar first; if it returns nothing or hard-fails, fall back to
   // OpenAlex's open dataset so users still get a result when Scholar is blocked.
   const runSearch = useCallback(async (query: string) => {
+    // People paste a profile link into the name box. Recognise it and open the
+    // profile instead of searching for the URL as if it were a name — that
+    // always hard-failed (SerpAPI finds nothing, the scrape fallback gets a
+    // 403), and it was the single most common logged search error.
+    const directUrl = scholarService.scholarProfileUrlFrom(query);
+    if (directUrl) {
+      onSelect(directUrl);
+      onClose();
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setSearched(true);
     setSource('scholar');
+
+    if (scholarService.looksLikeUrl(query)) {
+      setResults([]);
+      setError('That looks like a link rather than a name. Paste a Google Scholar profile URL (it contains "?user=") in the field below, or search by the researcher\'s name.');
+      setLoading(false);
+      return;
+    }
 
     let scholarFailed = false;
     try {
@@ -118,7 +136,7 @@ export function ScholarSearchModal({ isOpen, onClose, onSelect, initialQuery = '
       setError('Search is temporarily unavailable. Please try again, or paste a Google Scholar URL.');
     }
     setLoading(false);
-  }, []);
+  }, [onSelect, onClose]);
 
   useEffect(() => {
     if (isOpen) {
@@ -163,8 +181,11 @@ export function ScholarSearchModal({ isOpen, onClose, onSelect, initialQuery = '
     e.preventDefault();
     const url = pastedUrl.trim();
     if (!url) return;
-    if (url.includes('scholar.google.') && url.includes('user=')) {
-      onSelect(url);
+    // Same recognition as the name box, so both fields accept exactly the same
+    // set of links and hand on a normalized URL.
+    const normalized = scholarService.scholarProfileUrlFrom(url);
+    if (normalized) {
+      onSelect(normalized);
       onClose();
     } else {
       setUrlError('Please paste a valid Google Scholar profile URL');
