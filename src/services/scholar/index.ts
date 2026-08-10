@@ -64,6 +64,30 @@ export const scholarService = {
     throw new Error(fullError);
   },
 
+  /** Normalized profile URL for any input that identifies a Scholar profile — a
+   *  full or scheme-less Scholar URL with a `user` id, however many extra query
+   *  params it carries — else null. Lets a search box recognise a pasted profile
+   *  link instead of sending it to SerpAPI as if it were a person's name. */
+  scholarProfileUrlFrom: (input: string): string | null => {
+    const trimmed = input.trim();
+    if (!/scholar\.google\./i.test(trimmed)) return null;
+    const withScheme = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+    try {
+      const urlObj = new URL(withScheme);
+      if (!urlObj.hostname.includes('scholar.google.')) return null;
+      const userId = urlObj.searchParams.get('user');
+      if (!userId || userId.length < 12) return null;
+      return `https://scholar.google.com/citations?user=${encodeURIComponent(userId)}`;
+    } catch {
+      return null;
+    }
+  },
+
+  /** Whether an input is a web address rather than a name. Such a query must
+   *  never reach the name search: SerpAPI returns nothing for a URL and the
+   *  scrape fallback is blocked, so it fails hard and logs an error. */
+  looksLikeUrl: (input: string): boolean => /^(https?:\/\/|www\.)|\.[a-z]{2,}\//i.test(input.trim()),
+
   validateProfileUrl: (url: string) => {
     try {
       const urlObj = new URL(url);
