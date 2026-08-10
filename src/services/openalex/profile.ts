@@ -1,6 +1,7 @@
 import type { Author, Publication } from '../../types/scholar';
 import { buildAuthorResult, type AuthorSearchResult } from '../scholar/index';
 import { oaFetchJson, OA_API_URL, OA_EMAIL } from './author-lookup';
+import { extractLastName, surnamesCompatible } from '../../utils/names';
 
 /**
  * OpenAlex fallback profile source.
@@ -207,4 +208,39 @@ function interestsOf(a: OaAuthorRecord): string[] {
 function workUrl(w: OaWork): string {
   if (w.doi) return w.doi.startsWith('http') ? w.doi : `https://doi.org/${w.doi}`;
   return w.id || '';
+}
+
+/**
+ * Resolve a name to a full OpenAlex profile, for use when Google Scholar can't
+ * be reached and nothing is cached (e.g. a claimed vanity URL). Returns null
+ * rather than a guess: the surname must be compatible with the requested name,
+ * so a failed lookup never renders somebody else's publications under a
+ * researcher's own link.
+ */
+export async function resolveOpenAlexFallback(
+  name: string
+): Promise<{ id: string; profile: Author } | null> {
+  const wanted = extractLastName(name);
+  if (!wanted) return null;
+
+  let candidates: AuthorSearchResult[];
+  try {
+    candidates = await searchOpenAlexAuthors(name);
+  } catch {
+    return null;
+  }
+
+  // Candidates come back ordered by OpenAlex relevance; take the most-cited of
+  // those whose surname actually matches, which prefers the fuller record when
+  // a researcher is split across duplicates.
+  const match = candidates
+    .filter(c => surnamesCompatible(extractLastName(c.name), wanted))
+    .sort((a, b) => b.citedBy - a.citedBy)[0];
+  if (!match) return null;
+
+  try {
+    return { id: match.authorId, profile: await fetchOpenAlexProfile(match.authorId) };
+  } catch {
+    return null;
+  }
 }
