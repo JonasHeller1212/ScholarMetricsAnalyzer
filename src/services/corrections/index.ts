@@ -1,5 +1,6 @@
 import type { Author } from '../../types/scholar';
 import { supabase } from '../../lib/supabase';
+import { toPronounChoice } from '../../utils/pronouns';
 
 /**
  * Verified profile corrections.
@@ -18,7 +19,7 @@ import { supabase } from '../../lib/supabase';
  */
 
 export interface ProfileOverride {
-  field: 'affiliation' | 'display_name' | 'title' | 'hide_work' | string;
+  field: 'affiliation' | 'display_name' | 'title' | 'pronouns' | 'hide_work' | string;
   value: unknown;
   note: string | null;
   verified_via: 'admin' | 'orcid' | string;
@@ -61,6 +62,13 @@ export function applyProfileOverrides(profile: Author, overrides: ProfileOverrid
     if (!text) continue;
     if (o.field === 'affiliation') next = { ...next, affiliation: text };
     else if (o.field === 'display_name') next = { ...next, name: text };
+    else if (o.field === 'pronouns') {
+      // Self-declared only. An unrecognised value is dropped rather than
+      // applied, so a bad row can't garble the narrative.
+      const choice = toPronounChoice(text);
+      if (!choice) continue;
+      next = { ...next, pronouns: choice };
+    }
     else continue; // unhandled field (e.g. hide_work, applied elsewhere) — no marker
     applied.push({ field: o.field, note: o.note, verifiedVia: o.verified_via });
   }

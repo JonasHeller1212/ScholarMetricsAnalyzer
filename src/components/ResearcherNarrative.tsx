@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { logCaughtError } from '../lib/errorLogger';
 import { useAuth } from '../contexts/AuthContext';
 import { coAuthorsOf } from '../utils/authorIdentity';
+import { pronounsFor, conjugate, capitalizeFirst, type PronounSet } from '../utils/pronouns';
 import type { Author, CoAuthorGeoData, FieldNormalizedMetrics } from '../types/scholar';
 import type { PIndexResult } from '../services/openalex/pindex';
 import { findJournalRanking } from '../data/journalRankings';
@@ -446,6 +447,8 @@ function inferDiscipline(affiliation: string, topicNames: string[]): string | nu
 
 export function generateNarrativeParagraphs(data: Author, pIndexResult?: PIndexResult | null): string[] {
     const { publications, metrics, topics, name, totalCitations } = data;
+    // Neutral they/them unless the researcher has told us otherwise.
+    const pn = pronounsFor(data.pronouns);
     const career = getCareerSpan(publications);
     const topVenues = getTopVenues(publications, 3);
     const phase = getProductivityPhase(publications);
@@ -554,14 +557,14 @@ export function generateNarrativeParagraphs(data: Author, pIndexResult?: PIndexR
     } else if (totalCitations === 0) {
       impactParagraph = `${lastNameCap} has published **${publications.length}** work${publications.length !== 1 ? 's' : ''} but has not yet accumulated citations in Google Scholar.`;
     } else {
-      impactParagraph = `Over the course of their career, ${lastNameCap} has published **${publications.length}** work${publications.length !== 1 ? 's' : ''} and accumulated **${totalCitations.toLocaleString()}** citation${totalCitations !== 1 ? 's' : ''}, yielding an h-index of **${metrics.hIndex}**`;
+      impactParagraph = `Over the course of ${pn.possessive} career, ${lastNameCap} has published **${publications.length}** work${publications.length !== 1 ? 's' : ''} and accumulated **${totalCitations.toLocaleString()}** citation${totalCitations !== 1 ? 's' : ''}, yielding an h-index of **${metrics.hIndex}**`;
       if (metrics.i10Index > 0) {
         impactParagraph += ` and an i10-index of **${metrics.i10Index}** (${metrics.i10Index} publication${metrics.i10Index !== 1 ? 's' : ''} with 10 or more citations)`;
       }
       impactParagraph += '.';
 
       if (topPaper && topPaper.citations > 0) {
-        impactParagraph += ` Their most cited work, "${topPaper.title}", has received **${topPaper.citations.toLocaleString()}** citation${topPaper.citations !== 1 ? 's' : ''}.`;
+        impactParagraph += ` ${capitalizeFirst(pn.possessive)} most cited work, "${topPaper.title}", has received **${topPaper.citations.toLocaleString()}** citation${topPaper.citations !== 1 ? 's' : ''}.`;
       }
     }
     paragraphs.push(impactParagraph);
@@ -581,7 +584,7 @@ export function generateNarrativeParagraphs(data: Author, pIndexResult?: PIndexR
     } else if (phase === 'decelerating') {
       trendParagraph = `${lastNameCap}'s recent publication rate has slowed to **${recentRate}** per year, compared to **${olderRate}** in the preceding three-year period.`;
     } else if (phase === 'emerging') {
-      trendParagraph = `${lastNameCap} appears to be in the early stages of their publication career.`;
+      trendParagraph = `${lastNameCap} appears to be in the early stages of ${pn.possessive} publication career.`;
     } else if (phase === 'inactive') {
       trendParagraph = 'There are no publications in the most recent three years in the indexed record.';
     }
@@ -633,7 +636,7 @@ export function generateNarrativeParagraphs(data: Author, pIndexResult?: PIndexR
         const shared = earlyThemes.filter(t => recentSet.has(t)).slice(0, 3);
         if (shared.length > 0) {
           paragraphs.push(
-            `Throughout their career, ${lastNameCap}'s research has consistently centered on ${formatList(shared)}.`
+            `Throughout ${pn.possessive} career, ${lastNameCap}'s research has consistently centered on ${formatList(shared)}.`
           );
         }
       }
@@ -658,7 +661,7 @@ export function generateNarrativeParagraphs(data: Author, pIndexResult?: PIndexR
       }
       collabParagraph = `${collabPct} of ${lastNameCap}'s publications are co-authored, with an average of **${metrics.averageAuthors}** authors per paper across **${metrics.totalCoAuthors}** unique co-author${metrics.totalCoAuthors !== 1 ? 's' : ''}.`;
       if (metrics.topCoAuthor && metrics.topCoAuthorPapers >= 2) {
-        collabParagraph += ` ${lastNameCap}'s most frequent collaborator is ${metrics.topCoAuthor}, with whom they have co-authored **${metrics.topCoAuthorPapers}** publication${metrics.topCoAuthorPapers !== 1 ? 's' : ''}.`;
+        collabParagraph += ` ${lastNameCap}'s most frequent collaborator is ${metrics.topCoAuthor}, with whom ${pn.subject} ${conjugate('have', pn)} co-authored **${metrics.topCoAuthorPapers}** publication${metrics.topCoAuthorPapers !== 1 ? 's' : ''}.`;
       }
       const otherCoAuthors = (metrics.topCoAuthors ?? [])
         .slice(1) // skip #1 (already mentioned above)
@@ -702,6 +705,7 @@ export function generateNarrativeParagraphs(data: Author, pIndexResult?: PIndexR
 }
 
 function generateOpenAccessParagraph(data: Author): string | null {
+  const pn = pronounsFor(data.pronouns);
   const oa = data.openAccess;
   if (!oa || oa.total === 0) return null;
 
@@ -713,7 +717,7 @@ function generateOpenAccessParagraph(data: Author): string | null {
   else if (oa.oaPercent >= 10) pctLabel = `A smaller share (${oa.oaPercent}%)`;
   else pctLabel = `A small fraction (${oa.oaPercent}%)`;
 
-  let paragraph = `${pctLabel} of their indexed publications are openly accessible.`;
+  let paragraph = `${pctLabel} of ${pn.possessive} indexed publications are openly accessible.`;
 
   // Add breakdown if there's meaningful variety
   const parts: string[] = [];
@@ -752,7 +756,7 @@ function generateOpenAccessParagraph(data: Author): string | null {
       if (diff > 0.15) {
         paragraph += ` There is a notable trend toward increased open access publishing in recent years.`;
       } else if (diff > 0.05) {
-        paragraph += ` Open access publishing has been gradually increasing over their career.`;
+        paragraph += ` Open access publishing has been gradually increasing over ${pn.possessive} career.`;
       } else if (diff < -0.15) {
         paragraph += ` Interestingly, the share of open access publications has decreased in recent years.`;
       } else {
@@ -764,7 +768,7 @@ function generateOpenAccessParagraph(data: Author): string | null {
   return paragraph;
 }
 
-function generateFieldMetricsParagraph(fieldMetrics?: FieldNormalizedMetrics | null): string | null {
+function generateFieldMetricsParagraph(fieldMetrics: FieldNormalizedMetrics | null | undefined, pn: PronounSet): string | null {
   if (!fieldMetrics) return null;
   const parts: string[] = [];
 
@@ -772,24 +776,24 @@ function generateFieldMetricsParagraph(fieldMetrics?: FieldNormalizedMetrics | n
     const fwci = fieldMetrics.fwci.toFixed(2);
     const meanSuffix = fieldMetrics.fwciMean !== null ? ` (mean: ${fieldMetrics.fwciMean.toFixed(2)})` : '';
     if (fieldMetrics.fwci >= 1.0) {
-      parts.push(`Their median Field-Weighted Citation Impact (FWCI) is ${fwci}${meanSuffix}, meaning a typical publication of theirs receives ${fwci} times the world-average citations for its field, year, and publication type.`);
+      parts.push(`${capitalizeFirst(pn.possessive)} median Field-Weighted Citation Impact (FWCI) is ${fwci}${meanSuffix}, meaning a typical publication of ${pn.possessivePronoun} receives ${fwci} times the world-average citations for its field, year, and publication type.`);
     } else {
-      parts.push(`Their median Field-Weighted Citation Impact (FWCI) is ${fwci}${meanSuffix}, relative to the world average of 1.00 for their field, year, and publication type.`);
+      parts.push(`${capitalizeFirst(pn.possessive)} median Field-Weighted Citation Impact (FWCI) is ${fwci}${meanSuffix}, relative to the world average of 1.00 for ${pn.possessive} field, year, and publication type.`);
     }
   }
 
   if (fieldMetrics.topDecileShare !== null) {
-    parts.push(`${fieldMetrics.topDecileShare}% of their publications rank among the top 10% most-cited papers in their field (world baseline: 10%).`);
+    parts.push(`${fieldMetrics.topDecileShare}% of ${pn.possessive} publications rank among the top 10% most-cited papers in ${pn.possessive} field (world baseline: 10%).`);
   }
 
   if (fieldMetrics.meanCitedness !== null) {
-    parts.push(`The mean journal impact of their publication outlets is ${fieldMetrics.meanCitedness.toFixed(2)}.`);
+    parts.push(`The mean journal impact of ${pn.possessive} publication outlets is ${fieldMetrics.meanCitedness.toFixed(2)}.`);
   }
 
   return parts.length > 0 ? parts.join(' ') : null;
 }
 
-function generateGeoParagraph(geoData?: { mainAuthor: CoAuthorGeoData | null; coAuthors: CoAuthorGeoData[] } | null): string | null {
+function generateGeoParagraph(geoData: { mainAuthor: CoAuthorGeoData | null; coAuthors: CoAuthorGeoData[] } | null | undefined, pn: PronounSet): string | null {
   if (!geoData || geoData.coAuthors.length === 0) return null;
 
   const countries = new Set(geoData.coAuthors.map(a => a.countryCode));
@@ -830,7 +834,7 @@ function generateGeoParagraph(geoData?: { mainAuthor: CoAuthorGeoData | null; co
   else if (countryCount >= 3) scope = 'a moderate';
   else scope = 'a limited';
 
-  let paragraph = `Their co-authors span ${countryCount} ${countryCount === 1 ? 'country' : 'countries'}`;
+  let paragraph = `${capitalizeFirst(pn.possessive)} co-authors span ${countryCount} ${countryCount === 1 ? 'country' : 'countries'}`;
   if (continents.size > 1) {
     paragraph += ` across ${continents.size} continents`;
   }
@@ -839,7 +843,7 @@ function generateGeoParagraph(geoData?: { mainAuthor: CoAuthorGeoData | null; co
   return paragraph;
 }
 
-function generateCitationDistributionParagraph(metrics: Author['metrics'], totalCitations: number): string | null {
+function generateCitationDistributionParagraph(metrics: Author['metrics'], totalCitations: number, pn: PronounSet): string | null {
   if (totalCitations === 0) return null;
   const parts: string[] = [];
 
@@ -849,7 +853,7 @@ function generateCitationDistributionParagraph(metrics: Author['metrics'], total
     else if (metrics.citationGini >= 0.6) giniDesc = 'moderately concentrated';
     else if (metrics.citationGini >= 0.4) giniDesc = 'moderately spread across publications';
     else giniDesc = 'relatively evenly distributed across publications';
-    parts.push(`Their citation Gini coefficient of ${metrics.citationGini.toFixed(2)} indicates that citations are ${giniDesc}.`);
+    parts.push(`${capitalizeFirst(pn.possessive)} citation Gini coefficient of ${metrics.citationGini.toFixed(2)} indicates that citations are ${giniDesc}.`);
   }
 
   if (metrics.citationHalfLife > 0 && metrics.citationHalfLife < 100) {
@@ -857,18 +861,19 @@ function generateCitationDistributionParagraph(metrics: Author['metrics'], total
   }
 
   if (metrics.ageNormalizedRate > 0) {
-    parts.push(`Age-normalized, they receive approximately ${metrics.ageNormalizedRate} citation${metrics.ageNormalizedRate !== 1 ? 's' : ''} per career year.`);
+    parts.push(`Age-normalized, ${pn.subject} ${conjugate('receive', pn)} approximately ${metrics.ageNormalizedRate} citation${metrics.ageNormalizedRate !== 1 ? 's' : ''} per career year.`);
   }
 
   return parts.length > 0 ? parts.join(' ') : null;
 }
 
 export function ResearcherNarrative({ data, geoData, onSearch, pIndexResult }: ResearcherNarrativeProps) {
+  const pn = useMemo(() => pronounsFor(data.pronouns), [data.pronouns]);
   const narrative = useMemo(() => generateNarrativeParagraphs(data, pIndexResult), [data, pIndexResult]);
   const oaParagraph = useMemo(() => generateOpenAccessParagraph(data), [data]);
-  const fieldMetricsParagraph = useMemo(() => generateFieldMetricsParagraph(data.fieldMetrics), [data.fieldMetrics]);
-  const geoParagraph = useMemo(() => generateGeoParagraph(geoData), [geoData]);
-  const citationDistParagraph = useMemo(() => generateCitationDistributionParagraph(data.metrics, data.totalCitations), [data.metrics, data.totalCitations]);
+  const fieldMetricsParagraph = useMemo(() => generateFieldMetricsParagraph(data.fieldMetrics, pn), [data.fieldMetrics, pn]);
+  const geoParagraph = useMemo(() => generateGeoParagraph(geoData, pn), [geoData, pn]);
+  const citationDistParagraph = useMemo(() => generateCitationDistributionParagraph(data.metrics, data.totalCitations, pn), [data.metrics, data.totalCitations, pn]);
   const { refreshCredits } = useAuth();
   const [showReport, setShowReport] = useState(false);
   const [reportMsg, setReportMsg] = useState('');
@@ -1291,7 +1296,15 @@ function NarrativeBody({
 }
 
 // Re-export text-only versions for PDF export
-export const generateFieldMetricsParagraphText = generateFieldMetricsParagraph;
-export const generateGeoParagraphText = generateGeoParagraph;
-export const generateCitationDistributionParagraphText = generateCitationDistributionParagraph;
+// Text-only entry points for the PDF/CV exports. They take the whole Author so
+// the exported document uses the same pronouns as the page — an export that
+// still said "their" after the profile said "her" would be its own bug.
+export const generateFieldMetricsParagraphText = (data: Author) =>
+  generateFieldMetricsParagraph(data.fieldMetrics, pronounsFor(data.pronouns));
+export const generateGeoParagraphText = (
+  data: Author,
+  geoData?: { mainAuthor: CoAuthorGeoData | null; coAuthors: CoAuthorGeoData[] } | null
+) => generateGeoParagraph(geoData, pronounsFor(data.pronouns));
+export const generateCitationDistributionParagraphText = (data: Author) =>
+  generateCitationDistributionParagraph(data.metrics, data.totalCitations, pronounsFor(data.pronouns));
 export const generateOpenAccessParagraphText = generateOpenAccessParagraph;
