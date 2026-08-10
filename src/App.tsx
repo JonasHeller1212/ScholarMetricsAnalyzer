@@ -23,7 +23,7 @@ import { supabase } from './lib/supabase';
 import { ADMIN_EMAIL } from './lib/constants';
 import type { Author } from './types/scholar';
 import { scholarService } from './services/scholar';
-import { openAlexService, fetchOpenAlexProfile, OPENALEX_ID_PREFIX } from './services/openalex';
+import { openAlexService, fetchOpenAlexProfile, resolveOpenAlexFallback, OPENALEX_ID_PREFIX } from './services/openalex';
 import { fetchProfileOverrides, applyProfileOverrides } from './services/corrections';
 import { fetchFieldNormalizedMetrics } from './services/openalex/field-metrics';
 import { enrichWithSemanticScholar } from './services/semanticscholar';
@@ -149,7 +149,7 @@ function AppContent() {
   const [showSignUpWall, setShowSignUpWall] = useState(false);
   const [page, setPage] = useState<Page>('home');
   const requestInProgressRef = useRef(false);
-  const handleSearchRef = useRef<((url: string, bypassCredits?: boolean, cacheOnly?: boolean) => void) | null>(null);
+  const handleSearchRef = useRef<((url: string, bypassCredits?: boolean, cacheOnly?: boolean, nameFallback?: string) => void) | null>(null);
   const { user, credits, refreshCredits, showWelcome, dismissWelcome, showPasswordReset, dismissPasswordReset, updatePassword } = useAuth();
   const [showBonus, setShowBonus] = useState(() => !localStorage.getItem('sf_bonus_seen'));
   const isAdmin = user?.email === ADMIN_EMAIL;
@@ -238,13 +238,18 @@ function AppContent() {
     if (pathSlug && /^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/.test(pathSlug)) {
       supabase
         .from('claimed_profiles')
-        .select('author_id')
+        .select('author_id, display_name')
         .eq('slug', pathSlug)
         .maybeSingle()
         .then(({ data: claim }) => {
           if (claim?.author_id && handleSearchRef.current) {
             const scholarUrl = `https://scholar.google.com/citations?user=${encodeURIComponent(claim.author_id)}`;
-            handleSearchRef.current(scholarUrl, true, true);
+            // A claimed vanity URL is someone's public link to themselves, so it
+            // must not dead-end when Scholar is unreachable and nothing is
+            // cached. Pass a name so the fetch can fall back to OpenAlex: the
+            // stored display name, else the slug itself (slugs are name-derived).
+            const nameFallback = claim.display_name?.trim() || pathSlug.replace(/-/g, ' ');
+            handleSearchRef.current(scholarUrl, true, true, nameFallback);
           }
         })
         .catch((err: unknown) => logCaughtError(err, 'navigation', 'App', 'load-vanity-slug', { pathSlug }));
@@ -319,7 +324,7 @@ function AppContent() {
     setData(prev => prev ? { ...prev, s2Data, s2Stats: s2Result.stats } : prev);
   };
 
-  const handleSearch = useCallback(async (url: string, bypassCredits = false, cacheOnly = false) => {
+  const handleSearch = useCallback(async (url: string, bypassCredits = false, cacheOnly = false, nameFallback?: string) => {
     // Prevent multiple concurrent requests using ref to avoid stale closure
     if (requestInProgressRef.current) {
       return;
@@ -364,7 +369,18 @@ function AppContent() {
           return;
         }
         userId = validated.userId;
-        profileData = await scholarService.fetchProfile(url, cacheOnly ? { cacheOnly: true } : undefined);
+        try {
+          profileData = await scholarService.fetchProfile(url, cacheOnly ? { cacheOnly: true } : undefined);
+        } catch (err) {
+          // Scholar is unreachable (403/SerpAPI miss) and nothing usable is
+          // cached. With a name to go on, serve the OpenAlex profile instead of
+          // an error — the same open-data fallback the search flow already uses.
+          const fallback = nameFallback ? await resolveOpenAlexFallback(nameFallback) : null;
+          if (!fallback) throw err;
+          logCaughtError(err, 'profile', 'App', 'openalex-fallback-used', { url, nameFallback });
+          userId = fallback.id;
+          profileData = fallback.profile;
+        }
       }
       if (!profileData) {
         setError('Unable to fetch profile data. Please try again later or contact the site administrator.');
