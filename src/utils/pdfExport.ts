@@ -174,9 +174,9 @@ export function exportProfilePdf(data: Author, scholarId?: string, geoData?: { m
 
   // === RESEARCH PROFILE NARRATIVE ===
   const narrativeParagraphs = generateNarrativeParagraphs(data);
-  const fieldMetricsPara = generateFieldMetricsParagraphText(data.fieldMetrics);
-  const citDistPara = generateCitationDistributionParagraphText(data.metrics, data.totalCitations);
-  const geoPara = generateGeoParagraphText(geoData);
+  const fieldMetricsPara = generateFieldMetricsParagraphText(data);
+  const citDistPara = generateCitationDistributionParagraphText(data);
+  const geoPara = generateGeoParagraphText(data, geoData);
   const oaPara = generateOpenAccessParagraphText(data);
   const allNarrativeParagraphs = [
     ...narrativeParagraphs,

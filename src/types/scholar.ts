@@ -133,6 +133,10 @@ export interface Author {
   cacheStatus?: 'hit' | 'miss';
   /** Verified corrections applied on top of the source data (for provenance UI). */
   corrections?: AppliedCorrection[];
+  /** Self-declared pronouns for the generated narrative ('they' | 'she' | 'he').
+   *  Only ever set from a verified correction — never inferred from a name.
+   *  Absent means the neutral they/them default. */
+  pronouns?: string;
 }
 
 export interface AppliedCorrection {
